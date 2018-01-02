@@ -23,13 +23,17 @@ cmake_minimum_required(VERSION 2.8)
 ##################################################################################
 # tools to be used for programming the AVR
 ##################################################################################
-set(AVR_UPLOADTOOL ssh)
-set(AVR_PROGRAMMER avrispmkII)
-set(AVR_UPLOADTOOL_PORT usb)
+set(SSH_COMMAND ssh)
+set(SSH_HOST planedevpi.local)
+set(AVR_UPLOADTOOL avrdude)
+set(AVR_PROGRAMMER linuxspi)
+set(AVR_UPLOADTOOL_PORT /dev/spidev0.1)
 # AVR and fuses needs to be set
 set(AVR_MCU atmega2560)
-set(AVR_H_FUSE 0xd9)
-set(AVR_L_FUSE 0xc3)
+
+set(AVR_E_FUSE 0xfd)
+set(AVR_H_FUSE 0xd8)
+set(AVR_L_FUSE 0xff)
 
 ### END TOOLCHAIN SETUP AREA #############################################
 
@@ -46,6 +50,7 @@ message(STATUS "Current programmer is: ${AVR_PROGRAMMER}")
 message(STATUS "Current upload port is: ${AVR_UPLOADTOOL_PORT}")
 message(STATUS "Current uploadtool options are: ${AVR_UPLOADTOOL_OPTIONS}")
 message(STATUS "Current MCU is set to: ${AVR_MCU}")
+message(STATUS "Current E_FUSE is set to: ${AVR_E_FUSE}")
 message(STATUS "Current H_FUSE is set to: ${AVR_H_FUSE}")
 message(STATUS "Current L_FUSE is set to: ${AVR_L_FUSE}")
 
@@ -53,7 +58,7 @@ message(STATUS "Current L_FUSE is set to: ${AVR_L_FUSE}")
 # set build type, if not already set at cmake command line
 ##################################################################################
 if(NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
 ##################################################################################
@@ -68,15 +73,15 @@ if(DEFINED ENV{AVR_FIND_ROOT_PATH})
     set(CMAKE_FIND_ROOT_PATH $ENV{AVR_FIND_ROOT_PATH})
 else(DEFINED ENV{AVR_FIND_ROOT_PATH})
     if(EXISTS "/opt/local/avr")
-      set(CMAKE_FIND_ROOT_PATH "/opt/local/avr")
+        set(CMAKE_FIND_ROOT_PATH "/opt/local/avr")
     elseif(EXISTS "/usr/avr")
-      set(CMAKE_FIND_ROOT_PATH "/usr/avr")
+        set(CMAKE_FIND_ROOT_PATH "/usr/avr")
     elseif(EXISTS "/usr/lib/avr")
-      set(CMAKE_FIND_ROOT_PATH "/usr/lib/avr")
+        set(CMAKE_FIND_ROOT_PATH "/usr/lib/avr")
     elseif(EXISTS "/usr/local/CrossPack-AVR")
-      set(CMAKE_FIND_ROOT_PATH "/usr/local/CrossPack-AVR")
+        set(CMAKE_FIND_ROOT_PATH "/usr/local/CrossPack-AVR")
     else(EXISTS "/opt/local/avr")
-      message(FATAL_ERROR "Please set AVR_FIND_ROOT_PATH in your environment.")
+        message(FATAL_ERROR "Please set AVR_FIND_ROOT_PATH in your environment.")
     endif(EXISTS "/opt/local/avr")
 endif(DEFINED ENV{AVR_FIND_ROOT_PATH})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -97,18 +102,18 @@ message(STATUS "Set CMAKE_SYSTEM_LIBRARY_PATH to ${CMAKE_SYSTEM_LIBRARY_PATH}")
 # set compiler options for build types
 ##################################################################################
 if(CMAKE_BUILD_TYPE MATCHES Release)
-   set(CMAKE_C_FLAGS_RELEASE "-Os")
-   set(CMAKE_CXX_FLAGS_RELEASE "-Os")
+    set(CMAKE_C_FLAGS_RELEASE "-Os")
+    set(CMAKE_CXX_FLAGS_RELEASE "-Os")
 endif(CMAKE_BUILD_TYPE MATCHES Release)
 
 if(CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
-   set(CMAKE_C_FLAGS_RELWITHDEBINFO "-Os -save-temps -g -gdwarf-3 -gstrict-dwarf")
-   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Os -save-temps -g -gdwarf-3 -gstrict-dwarf")
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO "-Os -save-temps -g -gdwarf-3 -gstrict-dwarf")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Os -save-temps -g -gdwarf-3 -gstrict-dwarf")
 endif(CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-   set(CMAKE_C_FLAGS_DEBUG "-O0 -save-temps -g -gdwarf-3 -gstrict-dwarf")
-   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -save-temps -g -gdwarf-3 -gstrict-dwarf")
+    set(CMAKE_C_FLAGS_DEBUG "-O0 -save-temps -g -gdwarf-3 -gstrict-dwarf")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -save-temps -g -gdwarf-3 -gstrict-dwarf")
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 ##################################################################################
@@ -123,7 +128,7 @@ add_definitions("-Wextra")
 add_definitions("-Wstrict-prototypes")
 # http://gcc.gnu.org/onlinedocs/gcc-4.8.2/gcc/Alternate-Keywords.html#Alternate-Keywords
 # [...]-pedantic and other options cause warnings for many GNU C extensions. You can prevent such warnings within
-# one expression by writing __extension__ before the expression. __extension__ has no effect aside from this.[...] 
+# one expression by writing __extension__ before the expression. __extension__ has no effect aside from this.[...]
 add_definitions("-pedantic")
 add_definitions("-pedantic-errors")
 add_definitions("-funsigned-char")
@@ -138,11 +143,32 @@ set(NANOPB_RELEASE_DIRECOTRY /home/ludger/Developer/nanopb)
 include_directories(${NANOPB_RELEASE_DIRECOTRY})
 
 ##################################################################################
+# Debug and printf options
+##################################################################################
+add_definitions("-DNDEBUG")
+#add_definitions("-D__ASSERT_USE_STDERR")
+#add_definitions("-DI2C_DEBUG")
+#add_definitions("-DIMU_DEBUG")
+#add_definitions("-DGPS_DEBUG")
+#add_definitions("-DCOMMS_DEBUG")
+#add_definitions("-DFLIGHT_CONTROLLER_DEBUG")
+
+#---------------- Library Options ----------------
+# Minimalistic printf version
+set(PRINTF_LIB_MIN, -Wl,-u,vfprintf -lprintf_min)
+
+# Floating point printf version (requires MATH_LIB = -lm below)
+set(PRINTF_LIB_FLOAT, -Wl,-u,vfprintf -lprintf_flt)
+
+# If this is left blank, then it will use the Standard printf version.
+add_definitions(${PRINTF_LIB_MIN})
+
+##################################################################################
 # add AVR executable
 ##################################################################################
 add_custom_target(
-createProtobuf
-COMMAND protoc --plugin=protoc-gen-nanopb=${NANOPB_RELEASE_DIRECOTRY}/generator/protoc-gen-nanopb ${CMAKE_CURRENT_SOURCE_DIR}/../communicationProtocol.proto --nanopb_out=${CMAKE_CURRENT_SOURCE_DIR} -I ${CMAKE_CURRENT_SOURCE_DIR}/../
+        createProtobuf
+        COMMAND protoc --plugin=protoc-gen-nanopb=${NANOPB_RELEASE_DIRECOTRY}/generator/protoc-gen-nanopb ${CMAKE_CURRENT_SOURCE_DIR}/../communicationProtocol.proto --nanopb_out=${CMAKE_CURRENT_SOURCE_DIR} -I ${CMAKE_CURRENT_SOURCE_DIR}/../
 )
 
 file(GLOB autopilot_SRC
@@ -151,7 +177,7 @@ file(GLOB autopilot_SRC
         )
 
 add_avr_executable(
-        autopilot ${autopilot_SRC} communicationProtocol.pb.h communicationProtocol.pb.c
+        autopilot ${autopilot_SRC}
 )
 
 add_dependencies(autopilot createProtobuf)
