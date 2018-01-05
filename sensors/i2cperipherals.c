@@ -6,7 +6,7 @@
 //  Copyright © 2015 LH Technologies. All rights reserved.
 //
 
-#include "imuBoard.h"
+#include "i2cperipherals.h"
 
 #ifdef IMU_DEBUG
 #include <stdio.h>
@@ -22,6 +22,7 @@
 #include <avr/interrupt.h>
 #include "../avrlib/i2c.h"
 #include "../avrlib/timer.h"
+#include "bmp280.h"
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START    unsigned char _sreg = SREG; cli()
@@ -29,7 +30,7 @@
 #endif
 
 //Initialize "enabled" as false so the timer ISR (and other methods) don't communicate with the devices until they're ready
-volatile imuFlags theFlags = {.gyroEnabled = FALSE, .accelEnabled = FALSE, .magEnabled = FALSE, .bmpEnabled = FALSE};
+volatile imuFlags theFlags = {.gyroEnabled = FALSE, .accelEnabled = FALSE, .magEnabled = FALSE, .bmp180Enabled = FALSE};
 
 //Initialize all sensors on the IMU board
 void IMUinit() {
@@ -53,8 +54,8 @@ void IMUinit() {
         sbi(EICRB, ISC40); //Writing 1 to ISC40 and ISC41 sets interrupt on rising edge
         sbi(EICRB, ISC41);
 
-        sbi(EIMSK,
-            INT4); //Setting INT4 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
+        //Setting INT4 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
+        sbi(EIMSK, INT4);
 
         //Now wait for DRDY to go low and reenmable it to start everything off
         while (inb(PINE) & _BV(PINE4)) { ; //Wait for the port to go low
@@ -81,9 +82,8 @@ void IMUinit() {
         sbi(EICRA, ISC20); //Writing 1 to ISC20 and ISC21 sets interrupt on rising edge
         sbi(EICRA, ISC21);
 
-        sbi(EIMSK,
-            INT2); //Setting INT2 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
-
+        //Setting INT2 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
+        sbi(EIMSK, INT2);
         //Now wait for DRDY to go low and reenable it to start everything off
         while (inb(PINB) & _BV(PINB2)) { ; //Wait for the port to go low
         }
@@ -109,9 +109,8 @@ void IMUinit() {
         sbi(EICRA, ISC30); //Writing 1 to ISC30 and ISC31 sets interrupt on rising edge
         sbi(EICRA, ISC31);
 
-        sbi(EIMSK,
-            INT3); //Setting INT3 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
-
+        //Setting INT3 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
+        sbi(EIMSK, INT3);
     } else {
 #ifdef IMU_DEBUG
         printf("Error intitializing the magnetometer!\r\n");
@@ -120,8 +119,8 @@ void IMUinit() {
     }
 
     //Initialize the BMP180 pressure/temp sensor
-    if (bmpInit()) {
-        theFlags.bmpEnabled = TRUE;
+    if (bmp180Init()) {
+        theFlags.bmp180Enabled = TRUE;
 
         //Attach the interrupt handler for the timer ticks
         timerSetInterruptCallback(imuTimerTick);
@@ -130,14 +129,40 @@ void IMUinit() {
         const u08 toSend[2] = {BMP180_REGISTER_CONTROL, BMP180_REGISTER_READTEMPCMD};
         i2cMasterSendNI(BMP180_ADDRESS, 2, (u08 *) &toSend);
 
-        myBmpState = TEMPERATURE_MEASURING;
-        bmpLastStateChange = millis();
+        myBmp180State = BMP180_TEMPERATURE_MEASURING;
+        bmp180LastStateChange = millis();
 
     } else {
 #ifdef IMU_DEBUG
         printf("Error intitializing the BMP180!\r\n");
 #endif
-        theFlags.bmpEnabled = FALSE;
+        theFlags.bmp180Enabled = FALSE;
+    }
+
+    //Create the configuration for a bmp280 on 0x76
+    bmp280_0x76 = bmp280_defaults();
+    bmp280_0x76.address = 0x76;
+
+    //Initialize the BMP280 pressure/temp sensor on 0x76
+    if (bmp280Init(&bmp280_0x76)) {
+        theFlags.bmp280Enabled = TRUE;
+
+        //Attach the interrupt handler for the timer ticks
+        timerSetInterruptCallback(imuTimerTick);
+
+        //Start a measurement to set everything off
+        const u08 toSend[2] = {BMP280_REGISTER_CONTROL, ((u08) 0x01 | (u08) bmp280_0x76.pressure_mode << 2 |
+                                                         (u08) bmp280_0x76.temperature_mode << 5)};
+        i2cMasterSendNI(bmp280_0x76.address, 2, (u08 *) &toSend);
+
+        bmp280_0x76.state = BMP280_MEASURING;
+        bmp280_0x76.lastStateChange = millis();
+
+    } else {
+#ifdef BMP280_DEBUG
+        printf("Error intitializing the BMP280!\r\n");
+#endif
+        theFlags.bmp280Enabled = FALSE;
     }
 
 
@@ -159,7 +184,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
     //First, find out what just happened
     if (statusReg == TW_MT_DATA_ACK) {
 #ifdef IMU_DEBUG
-        printf("SH: Transmission complete\r\n");
+        printf("SH: Transmission complete from 0x%x\r\n", deviceaddress);
 #endif
 
         //Now we should receive data for the correct device
@@ -192,12 +217,12 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                 break;
 
             case BMP180_ADDRESS:
-                assert(myBmpState == TEMPERATURE_MEASURING || myBmpState == TEMPERATURE_READY ||
-                       myBmpState == PRESSURE_MEASURING || myBmpState == PRESSURE_READY);
+                assert(myBmp180State == BMP180_TEMPERATURE_MEASURING || myBmp180State == BMP180_TEMPERATURE_READY ||
+                       myBmp180State == BMP180_PRESSURE_MEASURING || myBmp180State == BMP180_PRESSURE_READY);
 
                 //Check the state
-                switch (myBmpState) {
-                    case TEMPERATURE_MEASURING:
+                switch (myBmp180State) {
+                    case BMP180_TEMPERATURE_MEASURING:
 #ifdef IMU_DEBUG
                         printf("BMP: Temp in progress\r\n");
 #endif
@@ -207,21 +232,21 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
                         break;
 
-                    case TEMPERATURE_READY:
+                    case BMP180_TEMPERATURE_READY:
 #ifdef IMU_DEBUG
                         printf("BMP: Temp ready\r\n");
 #endif
-                        assert(theFlags.bmpReady);
-                        assert(millis() - bmpLastStateChange >= BMP180_TEMPERATURE_DURATION);
+                        assert(theFlags.bmp180Ready);
+                        assert(millis() - bmp180LastStateChange >= BMP180_TEMPERATURE_DURATION);
 
-                        theFlags.bmpReady = FALSE;
+                        theFlags.bmp180Ready = FALSE;
 
                         //The received data will be two bytes long
                         i2cMasterStartReceiving(BMP180_ADDRESS, 2);
-                        myBmpState = TEMPERATURE_RECEIVING;
+                        myBmp180State = BMP180_TEMPERATURE_RECEIVING;
                         break;
 
-                    case PRESSURE_MEASURING:
+                    case BMP180_PRESSURE_MEASURING:
 #ifdef IMU_DEBUG
                         printf("BMP: Pressure in progress\r\n");
 #endif
@@ -231,21 +256,54 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
                         break;
 
-                    case PRESSURE_READY:
+                    case BMP180_PRESSURE_READY:
 #ifdef IMU_DEBUG
                         printf("BMP: Pressure ready\r\n");
 #endif
 
-                        assert(theFlags.bmpReady);
-                        assert(millis() - bmpLastStateChange >= BMP180_PRESSURE_DURATION);
+                        assert(theFlags.bmp180Ready);
+                        assert(millis() - bmp180LastStateChange >= BMP180_PRESSURE_DURATION);
 
-                        theFlags.bmpReady = FALSE;
+                        theFlags.bmp180Ready = FALSE;
 
                         //The received data will be three bytes (actually 19 bits) long
                         i2cMasterStartReceiving(BMP180_ADDRESS, 3);
-                        myBmpState = PRESSURE_RECEIVING;
+                        myBmp180State = BMP180_PRESSURE_RECEIVING;
                         break;
 
+                    default:
+                        break;
+                }
+                break;
+
+            case BMP280_ADDRESS2:
+                assert(bmp280_0x76.state == BMP280_MEASURING || bmp280_0x76.state == BMP280_READY);
+
+                //Check the state
+                switch (bmp280_0x76.state) {
+                    case BMP280_MEASURING:
+#ifdef BMP280_DEBUG
+                        printf("BMP280: in progress\r\n");
+#endif
+
+                        //We have not decided what to do on the bus yet, so decide it
+                        checkForPendingTransmissionsOrStop();
+
+                        break;
+                    case BMP280_READY:
+#ifdef BMP280_DEBUG
+                        printf("BMP280: ready\r\n");
+#endif
+
+                        assert(theFlags.bmp280Ready);
+                        assert(millis() - bmp280_0x76.lastStateChange >= bmp280_0x76.measurement_time);
+
+                        theFlags.bmp280Ready = FALSE;
+
+                        //The received data will be six bytes long
+                        i2cMasterStartReceiving(bmp280_0x76.address, 6);
+                        bmp280_0x76.state = BMP280_RECEIVING;
+                        break;
                     default:
                         break;
                 }
@@ -314,36 +372,48 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                 break;
 
             case BMP180_ADDRESS:
-                assert(myBmpState == TEMPERATURE_RECEIVING || myBmpState == PRESSURE_RECEIVING);
+                assert(myBmp180State == BMP180_TEMPERATURE_RECEIVING || myBmp180State == BMP180_PRESSURE_RECEIVING);
 
-                switch (myBmpState) {
-                    case TEMPERATURE_RECEIVING:
+                switch (myBmp180State) {
+                    case BMP180_TEMPERATURE_RECEIVING:
 #ifdef IMU_DEBUG
                         printf("BMP: Temp finished receiving\r\n");
 #endif
-                        bmpGetTempDataFromI2cBuffer();
+                        bmp180GetTempDataFromI2cBuffer();
 
                         //After the temperature measurement is done, start a pressure measurement
-                        bmpStartPressureCapture();
-                        myBmpState = PRESSURE_MEASURING;
-                        bmpLastStateChange = millis();
+                        bmp180StartPressureCapture();
+                        myBmp180State = BMP180_PRESSURE_MEASURING;
+                        bmp180LastStateChange = millis();
                         break;
 
-                    case PRESSURE_RECEIVING:
+                    case BMP180_PRESSURE_RECEIVING:
 #ifdef IMU_DEBUG
                         printf("BMP: Temp finished receiving\r\n");
 #endif
-                        bmpGetPressDataFromI2cBuffer();
+                        bmp180GetPressDataFromI2cBuffer();
 
                         //After the pressure is done, start another temperature measurement
-                        bmpStartTemperatureCapture();
-                        myBmpState = TEMPERATURE_MEASURING;
-                        bmpLastStateChange = millis();
+                        bmp180StartTemperatureCapture();
+                        myBmp180State = BMP180_TEMPERATURE_MEASURING;
+                        bmp180LastStateChange = millis();
                         break;
 
                     default:
                         break;
                 }
+                break;
+            case BMP280_ADDRESS2:
+#ifdef BMP280_DEBUG
+                printf("BMP280: finished receiving\r\n");
+#endif
+                assert(bmp280_0x76.state == BMP280_RECEIVING);
+                bmp280GetDataFromI2cBuffer(&bmp280_0x76);
+
+                //Now start the next measurement
+                bmp280StartCapture(&bmp280_0x76);
+                bmp280_0x76.state = BMP280_MEASURING;
+                bmp280_0x76.lastStateChange = millis();
                 break;
 
             default:
@@ -386,20 +456,27 @@ static void checkForPendingTransmissionsOrStop() {
 #ifdef IMU_DEBUG
         printf("Sending mag data request! @l: %i\r\n", __LINE__);
 #endif
-    } else if (theFlags.bmpReady) {
+    } else if (theFlags.bmp180Ready) {
         //Assert there is actually something ready
-        assert(myBmpState == TEMPERATURE_READY || myBmpState == PRESSURE_READY);
-        if (myBmpState == TEMPERATURE_READY) {
+        assert(myBmp180State == BMP180_TEMPERATURE_READY || myBmp180State == BMP180_PRESSURE_READY);
+        if (myBmp180State == BMP180_TEMPERATURE_READY) {
 #ifdef IMU_DEBUG
             printf("Starting temp data request! @l: %i\r\n", __LINE__);
 #endif
-            bmpStartReceivingTemperature();
-        } else if (myBmpState == PRESSURE_READY) {
+            bmp180StartReceivingTemperature();
+        } else if (myBmp180State == BMP180_PRESSURE_READY) {
 #ifdef IMU_DEBUG
             printf("Starting pressure data request! @l: %i\r\n", __LINE__);
 #endif
-            bmpStartReceivingPressure();
+            bmp180StartReceivingPressure();
         }
+    } else if (theFlags.bmp280Ready) {
+        //Assert there is actually something ready
+        assert(bmp280_0x76.state == BMP280_READY);
+#ifdef BMP280_DEBUG
+        printf("Starting temp/press (BMP280) data request! @l: %i\r\n", __LINE__);
+#endif
+        bmp280StartReceiving(&bmp280_0x76);
     } else {
 #ifdef IMU_DEBUG
         printf("IMU: Sending stop!\r\n");
@@ -411,36 +488,36 @@ static void checkForPendingTransmissionsOrStop() {
 
 void imuTimerTick(u32 millis) {
     //Only do stuff if the bmp is actually enabled
-    if (theFlags.bmpEnabled) {
-        switch (myBmpState) {
-            case TEMPERATURE_MEASURING:
-                if (millis - bmpLastStateChange >= BMP180_TEMPERATURE_DURATION) {
+    if (theFlags.bmp180Enabled) {
+        switch (myBmp180State) {
+            case BMP180_TEMPERATURE_MEASURING:
+                if (millis - bmp180LastStateChange >= BMP180_TEMPERATURE_DURATION) {
 #ifdef IMU_DEBUG
                     printf("TCB: Temp ready\r\n");
 #endif
                     //The measurement is ready
-                    myBmpState = TEMPERATURE_READY;
-                    theFlags.bmpReady = TRUE;
+                    myBmp180State = BMP180_TEMPERATURE_READY;
+                    theFlags.bmp180Ready = TRUE;
 
                     //If I2C is idle, transmit the temp register request, else just set the flag
                     if (I2cState == I2C_IDLE) {
-                        bmpStartReceivingTemperature();
+                        bmp180StartReceivingTemperature();
                     }
                 }
                 break;
 
-            case PRESSURE_MEASURING:
-                if (millis - bmpLastStateChange >= BMP180_PRESSURE_DURATION) {
+            case BMP180_PRESSURE_MEASURING:
+                if (millis - bmp180LastStateChange >= BMP180_PRESSURE_DURATION) {
 #ifdef IMU_DEBUG
                     printf("TCB: Pressure ready\r\n");
 #endif
                     //The measurement is ready
-                    myBmpState = PRESSURE_READY;
-                    theFlags.bmpReady = TRUE;
+                    myBmp180State = BMP180_PRESSURE_READY;
+                    theFlags.bmp180Ready = TRUE;
 
                     //If I2C is idle, transmit the temp register request, else just set the flag
                     if (I2cState == I2C_IDLE) {
-                        bmpStartReceivingPressure();
+                        bmp180StartReceivingPressure();
                     }
                 }
                 break;
@@ -449,6 +526,22 @@ void imuTimerTick(u32 millis) {
                 break;
         }
 
+    }
+
+    if (theFlags.bmp280Enabled) {
+        if (bmp280_0x76.state == BMP280_MEASURING &&
+            millis - bmp280_0x76.lastStateChange > bmp280_0x76.measurement_time) {
+#ifdef BMP280_DEBUG
+            printf("BMP280: Data ready (Timer ISR)\r\n");
+#endif
+            bmp280_0x76.state = BMP280_READY;
+            theFlags.bmp280Ready = TRUE;
+
+            //If I2C is idle, transmit the temp register request, else just set the flag
+            if (I2cState == I2C_IDLE) {
+                bmp280StartReceiving(&bmp280_0x76);
+            }
+        }
     }
 #ifdef IMU_DEBUG
     else {

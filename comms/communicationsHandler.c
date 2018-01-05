@@ -157,16 +157,16 @@ static u08 createProtobuf(messagePurpose thePurpose, u08 *messageLength) {
     }
 
     //Altitude for both
-    if ((thePurpose == logging && curPressure.timestamp - logAltitudeTime) ||
-        (thePurpose == telemetry && curPressure.timestamp - telAltitudeTime)) {
+    if ((thePurpose == logging && bmp180staticPressure.timestamp - logAltitudeTime) ||
+        (thePurpose == telemetry && bmp180staticPressure.timestamp - telAltitudeTime)) {
         outgoingMsg.has_current_altitude = true;
-        outgoingMsg.current_altitude = pressureToAltitude(curPressure.pressure, seaLevelPressure) * 100;
+        outgoingMsg.current_altitude = pressureToAltitude(bmp180staticPressure.pressure, seaLevelPressure) * 100;
 
         //Now update the time
         if (thePurpose == logging) {
-            logAltitudeTime = curPressure.timestamp;
+            logAltitudeTime = bmp180staticPressure.timestamp;
         } else {
-            telAltitudeTime = curPressure.timestamp;
+            telAltitudeTime = bmp180staticPressure.timestamp;
         }
     }
 
@@ -194,15 +194,15 @@ static u08 createProtobuf(messagePurpose thePurpose, u08 *messageLength) {
     }
 
     //Barodata just for logging
-    if (thePurpose == logging && curPressure.timestamp - logBaroDataTime) {
+    if (thePurpose == logging && bmp180staticPressure.timestamp - logBaroDataTime) {
         outgoingMsg.has_bmp_raw = true;
 
-        outgoingMsg.bmp_raw.timestamp = curPressure.timestamp;
-        outgoingMsg.bmp_raw.pressure = curPressure.pressure;
-        outgoingMsg.bmp_raw.temperature = curPressure.temperature;
+        outgoingMsg.bmp_raw.timestamp = bmp180staticPressure.timestamp;
+        outgoingMsg.bmp_raw.pressure = bmp180staticPressure.pressure;
+        outgoingMsg.bmp_raw.temperature = bmp180staticPressure.temperature;
 
         //Now update the time
-        logBaroDataTime = curPressure.timestamp;
+        logBaroDataTime = bmp180staticPressure.timestamp;
     }
 
     //Gyrodata just for logging

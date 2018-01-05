@@ -16,12 +16,14 @@ typedef struct {
     BOOL gyroEnabled;
     BOOL accelEnabled;
     BOOL magEnabled;
-    BOOL bmpEnabled;
+    BOOL bmp180Enabled;
+    BOOL bmp280Enabled;
 
     BOOL gyroReady;
     BOOL accelReady;
     BOOL magReady;
-    BOOL bmpReady;
+    BOOL bmp180Ready;
+    BOOL bmp280Ready;
 } imuFlags;
 
 extern volatile imuFlags theFlags;

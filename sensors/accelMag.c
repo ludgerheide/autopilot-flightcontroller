@@ -147,6 +147,10 @@ void magSendDataRequest(void) {
 
 void accelGetData(accelEvent *myEvent) {
     CRITICAL_SECTION_START;
+    if (myEvent->timestamp == myAccelRawData.timestamp) {
+        CRITICAL_SECTION_END;
+        return;
+    }
     /* Shift values to create properly formed integer (low byte first) */
     s16 rawX = (s16) (myAccelRawData.xlo | (myAccelRawData.xhi << 8)) >> 4;
     s16 rawY = (s16) (myAccelRawData.ylo | (myAccelRawData.yhi << 8)) >> 4;
@@ -166,6 +170,10 @@ void accelGetData(accelEvent *myEvent) {
 
 void magGetData(magEvent *myEvent) {
     CRITICAL_SECTION_START;
+    if (myEvent->timestamp == myMagRawData.timestamp) {
+        CRITICAL_SECTION_END;
+        return;
+    }
     /* Shift values to create properly formed integer (low byte first) */
     s16 rawX = (s16) (myMagRawData.xlo | (myMagRawData.xhi << 8));
     s16 rawY = (s16) (myMagRawData.ylo | (myMagRawData.yhi << 8));
@@ -190,6 +198,9 @@ void magGetData(magEvent *myEvent) {
 // y =  m21 m22 m23 * (yin - offsety)
 // z    m31 m32 m33    zin - offsetz
 void magCompensate(magEvent *input, magEvent *output) {
+    if (input->timestamp == output->timestamp) {
+        return;
+    }
     const float magn_ellipsoid_center[3] = {23.9234, -0.35877, 2.25237};
     const float magn_ellipsoid_transform[3][3] = {{0.982285,    -0.00897246, 0.0191484},
                                                   {-0.00897246, 0.956478,    0.00909634},

@@ -276,7 +276,8 @@ static BOOL autonomousSensorsGood(void) {
     }
 
     //Check the altimeter
-    if (curPressure.timestamp == 0 || nowMicros - curPressure.timestamp > (u32) 1000 * SENSOR_TIMEOUT) {
+    if (bmp180staticPressure.timestamp == 0 ||
+        nowMicros - bmp180staticPressure.timestamp > (u32) 1000 * SENSOR_TIMEOUT) {
         return FALSE;
     }
 

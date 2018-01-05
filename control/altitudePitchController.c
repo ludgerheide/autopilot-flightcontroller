@@ -36,15 +36,15 @@ s32 smoothedAltitude;
 s08 calculatePitchAngle(s32 targetAltitude) {
     //Check if we have a new altitude available and update our smoothed altitude
     s32 altitudeError;
-    u32 altitudeAge = curPressure.timestamp - lastAltitudeTime;
+    u32 altitudeAge = bmp180staticPressure.timestamp - lastAltitudeTime;
     if (altitudeAge > 0) {
-        updateMovingAverageFilter(curPressure.pressure);
+        updateMovingAverageFilter(bmp180staticPressure.pressure);
 
         //Update the time and the integral
         altitudeError = targetAltitude - smoothedAltitude;
         integratedAltitudeError += altitudeError * (altitudeAge / (float) 1000000);
 
-        lastAltitudeTime = curPressure.timestamp;
+        lastAltitudeTime = bmp180staticPressure.timestamp;
 
         //Anti-windup
         if (integratedAltitudeError > maxAltitudeIntegral) {

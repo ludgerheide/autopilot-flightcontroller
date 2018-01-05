@@ -6,8 +6,8 @@
 //  Copyright © 2015 LH Technologies. All rights reserved.
 //
 
-#ifndef bmp_h
-#define bmp_h
+#ifndef bmp180_h
+#define bmp180_h
 
 #include <stdio.h>
 #include "../avrlib/avrlibtypes.h"
@@ -61,9 +61,9 @@ typedef enum {
 /*=========================================================================*/
 
 typedef struct {
-    float temperature;
-    float pressure;
-    u32 timestamp;
+    float temperature; //Celsius?
+    float pressure;  //hPa?
+    u32 timestamp; //microseconds
 } pressureEvent;
 
 typedef struct tempPressRawData {
@@ -76,46 +76,46 @@ typedef struct tempPressRawData {
 } tempPressRawData;
 
 typedef enum {
-    IDLE,
-    TEMPERATURE_MEASURING,
-    TEMPERATURE_READY,
-    TEMPERATURE_RECEIVING,
-    PRESSURE_MEASURING,
-    PRESSURE_READY,
-    PRESSURE_RECEIVING
-} bmpState;
+    BMP180_IDLE,
+    BMP180_TEMPERATURE_MEASURING,
+    BMP180_TEMPERATURE_READY,
+    BMP180_TEMPERATURE_RECEIVING,
+    BMP180_PRESSURE_MEASURING,
+    BMP180_PRESSURE_READY,
+    BMP180_PRESSURE_RECEIVING,
+} bmp180State;
 
 //Variables
-extern bmpState myBmpState;
-extern tempPressRawData myBmpRawData;
-extern u32 bmpLastStateChange;
+extern bmp180State myBmp180State;
+extern volatile tempPressRawData myBmp180RawData;
+extern u32 bmp180LastStateChange;
 
-//Initialize the gyro
+//Initialize the BMP
 //Returns true if the initializationw as successfull, false otherwise
-BOOL bmpInit(void);
+BOOL bmp180Init(void);
 
 //Start the temperature capture
-void bmpStartTemperatureCapture(void);
+void bmp180StartTemperatureCapture(void);
 
 //Send the "get temperature" request
-void bmpStartReceivingTemperature(void);
+void bmp180StartReceivingTemperature(void);
 
 //Start the pressure capture
-void bmpStartPressureCapture(void);
+void bmp180StartPressureCapture(void);
 
 //Send the "get pressure" request
-void bmpStartReceivingPressure(void);
+void bmp180StartReceivingPressure(void);
 
 //Copy the data out of the receiving buffer into our struct
-void bmpGetPressDataFromI2cBuffer(void);
+void bmp180GetPressDataFromI2cBuffer(void);
 
 //Copy the data out of the receiving buffer into our struct
-void bmpGetTempDataFromI2cBuffer(void);
+void bmp180GetTempDataFromI2cBuffer(void);
 
 //Gets the altitude from the bmp
-void bmpGetData(pressureEvent *myEvent);
+void bmp180GetData(pressureEvent *myEvent);
 
 //Convert a pressure reading to altitude
 float pressureToAltitude(float atmosphericPressure, float theSeaLevelPressure);
 
-#endif /* bmp_h */
+#endif /* bmp180_h */

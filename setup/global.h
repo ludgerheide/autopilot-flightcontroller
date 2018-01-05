@@ -51,8 +51,8 @@ typedef struct {
 } attitude_struct;
 attitude_struct currentAttitude;
 
-pressureEvent curPressure;
-magEvent curMag;
+pressureEvent bmp180staticPressure, bmp280pitotPressure;
+magEvent uncompensatedMag, curMag;
 accelEvent curAccel;
 gyroEvent curGyro;
 batteryEvent curBattery;

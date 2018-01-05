@@ -175,6 +175,10 @@ void gyroSendDataRequest(void) {
 //Gets the data from the gyro
 void gyroGetData(gyroEvent *myEvent) {
     CRITICAL_SECTION_START;
+    if (myEvent->timestamp == myGyroRawData.timestamp) {
+        CRITICAL_SECTION_END;
+        return;
+    }
     /* Shift values to create properly formed integer (low byte first) */
     s16 rawX = (s16) (myGyroRawData.xlo | (myGyroRawData.xhi << 8));
     s16 rawY = (s16) (myGyroRawData.ylo | (myGyroRawData.yhi << 8));

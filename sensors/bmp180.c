@@ -43,10 +43,10 @@ typedef struct {
 
 //Variables
 static BMP180_calib_data calibData;
-bmpState myBmpState;
-tempPressRawData myBmpRawData;
+bmp180State myBmp180State;
+volatile tempPressRawData myBmp180RawData;
 static const BMP180_mode_t selectedMode = BMP180_MODE_ULTRAHIGHRES;
-u32 bmpLastStateChange;
+u32 bmp180LastStateChange;
 
 //static void bmpWrite8(u08 reg, u08 value) {
 //    //Combine reg and value in a 16 byt variable
@@ -56,7 +56,7 @@ u32 bmpLastStateChange;
 //    assert(i2cstat == I2C_OK);
 //}
 
-static u08 bmpRead8(u08 reg) {
+static u08 bmp180Read8(u08 reg) {
     u08 i2cstat = i2cMasterSendNI(BMP180_ADDRESS, 1, &reg);
     assert(i2cstat == I2C_OK);
 
@@ -68,7 +68,7 @@ static u08 bmpRead8(u08 reg) {
     return outByte;
 }
 
-static u16 bmpReadU16(u08 reg) {
+static u16 bmp180ReadU16(u08 reg) {
     u08 i2cstat = i2cMasterSendNI(BMP180_ADDRESS, 1, &reg);
     assert(i2cstat == I2C_OK);
 
@@ -81,7 +81,7 @@ static u16 bmpReadU16(u08 reg) {
     return ((outByte[0] << 8) | outByte[1]);
 }
 
-static s16 bmpReadS16(u08 reg) {
+static s16 bmp180ReadS16(u08 reg) {
     u08 i2cstat = i2cMasterSendNI(BMP180_ADDRESS, 1, &reg);
     assert(i2cstat == I2C_OK);
 
@@ -95,19 +95,19 @@ static s16 bmpReadS16(u08 reg) {
 }
 
 static void readCoefficients(void) {
-    calibData.ac1 = bmpReadS16(BMP180_REGISTER_CAL_AC1);
-    calibData.ac2 = bmpReadS16(BMP180_REGISTER_CAL_AC2);
-    calibData.ac3 = bmpReadS16(BMP180_REGISTER_CAL_AC3);
+    calibData.ac1 = bmp180ReadS16(BMP180_REGISTER_CAL_AC1);
+    calibData.ac2 = bmp180ReadS16(BMP180_REGISTER_CAL_AC2);
+    calibData.ac3 = bmp180ReadS16(BMP180_REGISTER_CAL_AC3);
 
-    calibData.ac4 = bmpReadU16(BMP180_REGISTER_CAL_AC4);
-    calibData.ac5 = bmpReadU16(BMP180_REGISTER_CAL_AC5);
-    calibData.ac6 = bmpReadU16(BMP180_REGISTER_CAL_AC6);
+    calibData.ac4 = bmp180ReadU16(BMP180_REGISTER_CAL_AC4);
+    calibData.ac5 = bmp180ReadU16(BMP180_REGISTER_CAL_AC5);
+    calibData.ac6 = bmp180ReadU16(BMP180_REGISTER_CAL_AC6);
 
-    calibData.b1 = bmpReadS16(BMP180_REGISTER_CAL_B1);
-    calibData.b2 = bmpReadS16(BMP180_REGISTER_CAL_B2);
-    calibData.mb = bmpReadS16(BMP180_REGISTER_CAL_MB);
-    calibData.mc = bmpReadS16(BMP180_REGISTER_CAL_MC);
-    calibData.md = bmpReadS16(BMP180_REGISTER_CAL_MD);
+    calibData.b1 = bmp180ReadS16(BMP180_REGISTER_CAL_B1);
+    calibData.b2 = bmp180ReadS16(BMP180_REGISTER_CAL_B2);
+    calibData.mb = bmp180ReadS16(BMP180_REGISTER_CAL_MB);
+    calibData.mc = bmp180ReadS16(BMP180_REGISTER_CAL_MC);
+    calibData.md = bmp180ReadS16(BMP180_REGISTER_CAL_MD);
 }
 
 static int32_t computeB5(int32_t ut) {
@@ -116,80 +116,85 @@ static int32_t computeB5(int32_t ut) {
     return X1 + X2;
 }
 
-BOOL bmpInit() {
-    u08 deviceId = bmpRead8(BMP180_REGISTER_CHIPID);
+BOOL bmp180Init() {
+    u08 deviceId = bmp180Read8(BMP180_REGISTER_CHIPID);
     if (deviceId != 0x55) {
         return FALSE;
     }
 
     readCoefficients();
 
-    myBmpState = IDLE;
+    myBmp180State = BMP180_IDLE;
 
     return TRUE;
 }
 
 //Start the temp capture
-void bmpStartTemperatureCapture(void) {
+void bmp180StartTemperatureCapture(void) {
     const u08 toSend[2] = {BMP180_REGISTER_CONTROL, BMP180_REGISTER_READTEMPCMD};
     i2cMasterSend(BMP180_ADDRESS, 2, (u08 *) &toSend);
 }
 
 //Send the "get temperature" request
-void bmpStartReceivingTemperature(void) {
-    assert(myBmpState == TEMPERATURE_READY);
+void bmp180StartReceivingTemperature(void) {
+    assert(myBmp180State == BMP180_TEMPERATURE_READY);
     u08 toSend = BMP180_REGISTER_TEMPDATA;
     i2cMasterSend(BMP180_ADDRESS, 1, &toSend);
 }
 
-void bmpStartPressureCapture(void) {
+void bmp180StartPressureCapture(void) {
     const u08 toSend[2] = {BMP180_REGISTER_CONTROL, BMP180_REGISTER_READPRESSURECMD_UHR};
     i2cMasterSend(BMP180_ADDRESS, 2, (u08 *) &toSend);
 }
 
 //Send the "get pressure" request
-void bmpStartReceivingPressure(void) {
-    assert(myBmpState == PRESSURE_READY);
+void bmp180StartReceivingPressure(void) {
+    assert(myBmp180State == BMP180_PRESSURE_READY);
     u08 pressReadCommand = BMP180_REGISTER_PRESSUREDATA;
     i2cMasterSend(BMP180_ADDRESS, 1, &pressReadCommand);
 }
 
 //Copy the data out of the receiving buffer into our struct
-void bmpGetPressDataFromI2cBuffer(void) {
+void bmp180GetPressDataFromI2cBuffer(void) {
     //The buffer should be three bytes long and full
     assert(I2cReceiveDataLength == 3);
     assert(I2cReceiveDataIndex == 3);
 
-    myBmpRawData.presshi = I2cReceiveData[0];
-    myBmpRawData.presslo = I2cReceiveData[1];
-    myBmpRawData.pressxlo = I2cReceiveData[2];
+    myBmp180RawData.presshi = I2cReceiveData[0];
+    myBmp180RawData.presslo = I2cReceiveData[1];
+    myBmp180RawData.pressxlo = I2cReceiveData[2];
 
-    myBmpRawData.timestamp = micros();
+    myBmp180RawData.timestamp = micros();
 }
 
-void bmpGetTempDataFromI2cBuffer(void) {
+void bmp180GetTempDataFromI2cBuffer(void) {
     //The buffer should be two bytes long and full
     assert(I2cReceiveDataLength == 2);
     assert(I2cReceiveDataIndex == 2);
 
-    myBmpRawData.temphi = I2cReceiveData[0];
-    myBmpRawData.templo = I2cReceiveData[1];
+    myBmp180RawData.temphi = I2cReceiveData[0];
+    myBmp180RawData.templo = I2cReceiveData[1];
 }
 
 //Gets the altitude from the bmp
-void bmpGetData(pressureEvent *myEvent) {
+void bmp180GetData(pressureEvent *myEvent) {
     // ----- DON'T ASK HOW THIS IS DONE! -----
 
     CRITICAL_SECTION_START;
-    myEvent->timestamp = myBmpRawData.timestamp;
+    if (myEvent->timestamp == myBmp180RawData.timestamp) {
+        CRITICAL_SECTION_END;
+        return;
+    }
+    myEvent->timestamp = myBmp180RawData.timestamp;
 
     //Maybe: Generate raw pressure int
     s32 rawPress;
-    rawPress = ((u32) myBmpRawData.presshi << 16) | ((u32) myBmpRawData.presslo << 8) | ((u32) myBmpRawData.pressxlo);
+    rawPress = ((u32) myBmp180RawData.presshi << 16) | ((u32) myBmp180RawData.presslo << 8) |
+               ((u32) myBmp180RawData.pressxlo);
     rawPress = rawPress >> (8 - selectedMode);
 
     //Maybe: Generate raw temperature int
-    s32 rawTemp = ((myBmpRawData.temphi) << 8) | (myBmpRawData.templo);
+    s32 rawTemp = ((myBmp180RawData.temphi) << 8) | (myBmp180RawData.templo);
     CRITICAL_SECTION_END;
 
     int32_t ut = 0, up = 0, compp = 0;
