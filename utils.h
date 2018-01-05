@@ -10,8 +10,8 @@
 #define utils_h
 
 #include <stdio.h>
-#include "avrlibtypes.h"
-#include "flightControllerTypes.h"
+#include "avrlib/avrlibtypes.h"
+#include "control/flightControllerTypes.h"
 
 //Attaches the prinbtf function to the raspi UART
 void printfAttachToUart(void);

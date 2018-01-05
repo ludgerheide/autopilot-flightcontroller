@@ -158,12 +158,14 @@ add_definitions("-DNDEBUG")
 ##################################################################################
 add_custom_target(
         createProtobuf
-        COMMAND protoc --plugin=protoc-gen-nanopb=${NANOPB_RELEASE_DIRECOTRY}/generator/protoc-gen-nanopb ${CMAKE_CURRENT_SOURCE_DIR}/../communicationProtocol.proto --nanopb_out=${CMAKE_CURRENT_SOURCE_DIR} -I ${CMAKE_CURRENT_SOURCE_DIR}/../
+        COMMAND protoc --plugin=protoc-gen-nanopb=${NANOPB_RELEASE_DIRECOTRY}/generator/protoc-gen-nanopb ${CMAKE_CURRENT_SOURCE_DIR}/../communicationProtocol.proto --nanopb_out=${CMAKE_CURRENT_SOURCE_DIR}/protobuf -I ${CMAKE_CURRENT_SOURCE_DIR}/../
 )
 
 file(GLOB autopilot_SRC
         "*.h"
         "*.c"
+        "**/*.h"
+        "**/*.c"
         )
 
 add_avr_executable(

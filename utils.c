@@ -7,11 +7,11 @@
 //
 
 #include "utils.h"
-#include "uart4.h"
+#include "avrlib/uart4.h"
 #include <assert.h>
 #include <avr/eeprom.h>
 #include <math.h>
-#include "pinSetup.h"
+#include "setup/pinSetup.h"
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START    unsigned char _sreg = SREG; cli()

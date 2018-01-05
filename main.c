@@ -1,20 +1,20 @@
 
 
-#include "gyro.h"
-#include "accelMag.h"
-#include "bmp180.h"
+#include "sensors/gyro.h"
+#include "sensors/accelMag.h"
+#include "sensors/bmp180.h"
 
 #include "utils.h"
-#include "imuBoard.h"
-#include "timer.h"
-#include "gps.h"
-#include "pinSetup.h"
-#include "MadgwickAHRS.h"
-#include "communicationsHandler.h"
-#include "raspiComms.h"
-#include "servo.h"
+#include "sensors/imuBoard.h"
+#include "avrlib/timer.h"
+#include "sensors/gps.h"
+#include "setup/pinSetup.h"
+#include "sensors/MadgwickAHRS.h"
+#include "comms/communicationsHandler.h"
+#include "comms/raspiComms.h"
+#include "avrlib/servo.h"
 
-#include "flightController.h"
+#include "control/flightController.h"
 
 void initIO(void) {
     raspiInit();
