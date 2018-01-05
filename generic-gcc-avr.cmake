@@ -219,9 +219,9 @@ function(add_avr_executable EXECUTABLE_NAME)
     # see also bug http://savannah.nongnu.org/bugs/?40142
     add_custom_target(
             upload_eeprom
-            ${AVR_UPLOADTOOL} -p ${AVR_MCU} -c ${AVR_PROGRAMMER} ${AVR_UPLOADTOOL_OPTIONS}
-            -U eeprom:w:${eeprom_image}
-            -P ${AVR_UPLOADTOOL_PORT}
+            COMMAND scp ${eeprom_image} ${SSH_HOST}:/tmp/ && echo "EEPROM File copied to remote host"
+            COMMAND ${SSH_COMMAND} ${SSH_HOST} -t sudo  ${AVR_UPLOADTOOL} -p ${AVR_MCU} -c ${AVR_PROGRAMMER} ${AVR_UPLOADTOOL_OPTIONS}  -U eeprom:w:/tmp/${eeprom_image}  -P ${AVR_UPLOADTOOL_PORT} &&  echo "Upload successful!"
+            COMMAND ${SSH_COMMAND} ${SSH_HOST} -t rm /tmp/${eeprom_image} && echo "EEPROM File deleted"
             DEPENDS ${eeprom_image}
             COMMENT "Uploading ${eeprom_image} to ${AVR_MCU} using ${AVR_PROGRAMMER}"
     )
@@ -236,18 +236,14 @@ function(add_avr_executable EXECUTABLE_NAME)
     # get fuses
     add_custom_target(
             get_fuses
-            ${AVR_UPLOADTOOL} -p ${AVR_MCU} -c ${AVR_PROGRAMMER} -P ${AVR_UPLOADTOOL_PORT} -n
-            -U lfuse:r:-:b
-            -U hfuse:r:-:b
+            COMMAND ${SSH_COMMAND} ${SSH_HOST} -t sudo ${AVR_UPLOADTOOL} -p ${AVR_MCU} -c ${AVR_PROGRAMMER} -P ${AVR_UPLOADTOOL_PORT} -n  -U lfuse:r:-:b  -U hfuse:r:-:b  -U efuse:r:-:b
             COMMENT "Get fuses from ${AVR_MCU}"
     )
 
     # set fuses
     add_custom_target(
             set_fuses
-            ${AVR_UPLOADTOOL} -p ${AVR_MCU} -c ${AVR_PROGRAMMER} -P ${AVR_UPLOADTOOL_PORT}
-            -U lfuse:w:${AVR_L_FUSE}:m
-            -U hfuse:w:${AVR_H_FUSE}:m
+            COMMAND ${SSH_COMMAND} ${SSH_HOST} -t sudo  ${AVR_UPLOADTOOL} -p ${AVR_MCU} -c ${AVR_PROGRAMMER} -P ${AVR_UPLOADTOOL_PORT}  -U lfuse:w:${AVR_L_FUSE}:m  -U hfuse:w:${AVR_H_FUSE}:m -U efuse:w:${AVR_E_FUSE}:m
             COMMENT "Setup: High Fuse: ${AVR_H_FUSE} Low Fuse: ${AVR_L_FUSE}"
     )
 
