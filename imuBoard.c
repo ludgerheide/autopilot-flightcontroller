@@ -17,7 +17,7 @@
 
 #include "accelMag.h"
 #include "gyro.h"
-#include "bmp.h"
+#include "bmp180.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "i2c.h"

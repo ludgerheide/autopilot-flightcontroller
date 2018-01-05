@@ -6,7 +6,7 @@
 //  Copyright © 2015 LH Technologies. All rights reserved.
 //
 
-#include "bmp.h"
+#include "bmp180.h"
 #include "i2c.h"
 
 #include <assert.h>

@@ -26,7 +26,7 @@
 // global AVRLIB types definitions
 #include "avrlibtypes.h"
 
-#include "bmp.h"
+#include "bmp180.h"
 #include "gyro.h"
 #include "accelMag.h"
 #include "battery.h"

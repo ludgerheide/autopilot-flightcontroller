@@ -2,7 +2,7 @@
 
 #include "gyro.h"
 #include "accelMag.h"
-#include "bmp.h"
+#include "bmp180.h"
 
 #include "utils.h"
 #include "imuBoard.h"
