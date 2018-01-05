@@ -136,7 +136,7 @@ add_definitions("-funsigned-bitfields")
 add_definitions("-ffunction-sections")
 add_definitions("-fdata-sections")
 add_definitions("-c")
-add_definitions("-std=gnu99")
+add_definitions("-std=gnu11")
 
 #Setup nanopb directory and includes
 set(NANOPB_RELEASE_DIRECOTRY /home/ludger/Developer/nanopb)
@@ -152,16 +152,6 @@ add_definitions("-DNDEBUG")
 #add_definitions("-DGPS_DEBUG")
 #add_definitions("-DCOMMS_DEBUG")
 #add_definitions("-DFLIGHT_CONTROLLER_DEBUG")
-
-#---------------- Library Options ----------------
-# Minimalistic printf version
-set(PRINTF_LIB_MIN, -Wl,-u,vfprintf -lprintf_min)
-
-# Floating point printf version (requires MATH_LIB = -lm below)
-set(PRINTF_LIB_FLOAT, -Wl,-u,vfprintf -lprintf_flt)
-
-# If this is left blank, then it will use the Standard printf version.
-add_definitions(${PRINTF_LIB_MIN})
 
 ##################################################################################
 # add AVR executable
@@ -182,19 +172,7 @@ add_avr_executable(
 
 add_dependencies(autopilot createProtobuf)
 
-##################################################################################
-# add AVR library
-##################################################################################
-#add_avr_library(
-#   <library-name>
-#   <sources> <headers>
-#)
-
-##################################################################################
-# link library to executable
-# NOTE: It needs to be the elf target.
-##################################################################################
-# target_link_libraries(<executable-name>-${AVR_MCU}.elf <library-name>-${AVR_MCU})
-# OR easier
-#target_link_libraries(<executable-name> <library-name> <some-external-libary>)
-
+#---------------- Library Options ----------------
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-u,vfprintf")
+#target_link_libraries(autopilot-${AVR_MCU}.elf printf_min)
+target_link_libraries(autopilot-${AVR_MCU}.elf printf_flt m)
