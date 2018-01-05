@@ -24,8 +24,7 @@ extern "C" {
  * 4) Substreams will modify max_size and bytes_written. Don't use them
  *    to calculate any pointers.
  */
-struct pb_ostream_s
-{
+struct pb_ostream_s {
 #ifdef PB_BUFFER_ONLY
     /* Callback pointer is not used in buffer-only configuration.
      * Having an int pointer here allows binary compatibility but
@@ -35,12 +34,14 @@ struct pb_ostream_s
      */
     int *callback;
 #else
+
     bool (*callback)(pb_ostream_t *stream, const pb_byte_t *buf, size_t count);
+
 #endif
     void *state;          /* Free field for use by callback implementation. */
     size_t max_size;      /* Limit number of output bytes written (or use SIZE_MAX). */
     size_t bytes_written; /* Number of bytes written so far. */
-    
+
 #ifndef PB_NO_ERRMSG
     const char *errmsg;
 #endif

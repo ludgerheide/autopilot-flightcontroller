@@ -14,7 +14,7 @@
 #define RX_BUFFER_SIZE 128 //TODO: identify min size
 static char raspiRxBuffer[RX_BUFFER_SIZE];
 
-const char startMarker[5] = {'s','t','a','r','t'};
+const char startMarker[5] = {'s', 't', 'a', 'r', 't'};
 
 volatile BOOL raspiNewMessageReady;
 volatile u08 received_index;
@@ -25,38 +25,38 @@ volatile u08 checksum;
 void raspiInit(void) {
     uartInit(RASPI_UART);
     uartSetBaudRate(RASPI_UART, 115200);
-    
-    uartSetRxHandler(RASPI_UART, raspiByteReceiver );
+
+    uartSetRxHandler(RASPI_UART, raspiByteReceiver);
 }
 
 //Called each time the raspi has sent a byte. ISR method – needs to be fast
 void raspiByteReceiver(u08 c) {
 #ifdef COMMS_DEBUG
-//    printf("%u: %02x\r\n",received_index, c);
+    //    printf("%u: %02x\r\n",received_index, c);
 #endif
-    if(received_index < 5) {
+    if (received_index < 5) {
         //For indices 0 to 4, it needs to match the "start" marker
-        if(c == startMarker[received_index]) {
+        if (c == startMarker[received_index]) {
             received_index++;
             return;
         } else {
             received_index = 0;
             return;
         }
-    } else if(received_index == 5) {
+    } else if (received_index == 5) {
         //At index 5, we should receive the message size
         msgSize = c;
         checksum = 0;
         received_index++;
         return;
-    } else if(received_index < (msgSize + 5 + 1) && (received_index - (5 + 1)) < RX_BUFFER_SIZE) {
+    } else if (received_index < (msgSize + 5 + 1) && (received_index - (5 + 1)) < RX_BUFFER_SIZE) {
         raspiRxBuffer[received_index - (5 + 1)] = c;
         checksum += c;
         received_index++;
         return;
-    } else if(received_index == (msgSize + 5 + 1)) {
+    } else if (received_index == (msgSize + 5 + 1)) {
         u08 receivedChecksum = c;
-        if(receivedChecksum == checksum) {
+        if (receivedChecksum == checksum) {
             raspiNewMessageReady = TRUE;
             received_index++;
         } else {
@@ -85,8 +85,8 @@ void raspiHandleMessage(void) {
     }
     printf("Size: %u\r\n", msgSize);
 #endif
-    
-    commsProcessMessage((char*)raspiRxBuffer, msgSize);
-    
+
+    commsProcessMessage((char *) raspiRxBuffer, msgSize);
+
     received_index = 0;
 }

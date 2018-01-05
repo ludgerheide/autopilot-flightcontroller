@@ -17,7 +17,7 @@ typedef struct {
     BOOL accelEnabled;
     BOOL magEnabled;
     BOOL bmpEnabled;
-    
+
     BOOL gyroReady;
     BOOL accelReady;
     BOOL magReady;

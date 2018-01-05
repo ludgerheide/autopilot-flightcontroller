@@ -35,7 +35,7 @@
 
 struct PositionLLA {
     u32 timestamp;
-    
+
     float lat;
     float lon;
     float alt;
@@ -44,7 +44,7 @@ struct PositionLLA {
 
 struct VelocityHS {
     u32 timestamp;
-    
+
     float heading;
     float speed;
     float TimeOfFix;
@@ -52,27 +52,27 @@ struct VelocityHS {
 
 typedef struct struct_GpsInfo {
     u08 numSVs;
-    
+
     struct PositionLLA PosLLA;
     struct VelocityHS VelHS;
-    
+
 } GpsInfoType;
 
 // Global variables
 extern GpsInfoType GpsInfo;
 
 // constants/macros/typdefs
-#define NMEA_BUFFERSIZE		80
+#define NMEA_BUFFERSIZE        80
 
 // Message Codes
-#define NMEA_NODATA		0	// No data. Packet not available, bad, or not decoded
-#define NMEA_GPGGA		1	// Global Positioning System Fix Data
-#define NMEA_GPVTG		2	// Course over ground and ground speed
-#define NMEA_GPGLL		3	// Geographic position - latitude/longitude
-#define NMEA_GPGSV		4	// GPS satellites in view
-#define NMEA_GPGSA		5	// GPS DOP and active satellites
-#define NMEA_GPRMC		6	// Recommended minimum specific GPS data
-#define NMEA_UNKNOWN	0xFF// Packet received but not known
+#define NMEA_NODATA        0    // No data. Packet not available, bad, or not decoded
+#define NMEA_GPGGA        1    // Global Positioning System Fix Data
+#define NMEA_GPVTG        2    // Course over ground and ground speed
+#define NMEA_GPGLL        3    // Geographic position - latitude/longitude
+#define NMEA_GPGSV        4    // GPS satellites in view
+#define NMEA_GPGSA        5    // GPS DOP and active satellites
+#define NMEA_GPRMC        6    // Recommended minimum specific GPS data
+#define NMEA_UNKNOWN    0xFF// Packet received but not known
 
 // Debugging
 //#define NMEA_DEBUG_PKT	///< define to enable debug of all NMEA messages
@@ -81,9 +81,13 @@ extern GpsInfoType GpsInfo;
 
 // functions
 void nmeaInit(void);
-u08* nmeaGetPacketBuffer(void);
-u08 nmeaProcess(cBuffer* rxBuffer);
-void nmeaProcessGPGGA(u08* packet);
-void nmeaProcessGPVTG(u08* packet);
+
+u08 *nmeaGetPacketBuffer(void);
+
+u08 nmeaProcess(cBuffer *rxBuffer);
+
+void nmeaProcessGPGGA(u08 *packet);
+
+void nmeaProcessGPVTG(u08 *packet);
 
 #endif

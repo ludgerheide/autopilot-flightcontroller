@@ -19,9 +19,9 @@
 ///		This is a UART driver for AVR-series processors with four hardware
 ///		UARTs such as the mega2560. This library provides both
 ///		buffered and unbuffered transmit and receive functions for the AVR
-///		processor UART. Buffered access means that the UART can transmit
+///		processor UART.ï¿½Buffered access means that the UART can transmit
 ///		and receive data in the "background", while your code continues
-///		executing.  Also included are functions to initialize the UARTs,
+///		executing.ï¿½ Also included are functions to initialize the UARTs,
 ///		set the baud rate, flush the buffers, and check buffer status.
 ///
 /// \note	For full text output functionality, you may wish to use the rprintf
@@ -67,71 +67,71 @@
 //! Default uart baud rate.
 /// This is the default speed after a uartInit() command,
 /// and can be changed by using uartSetBaudRate().
-#define UART0_DEFAULT_BAUD_RATE		9600	///< default baud rate for UART0
-#define UART1_DEFAULT_BAUD_RATE		9600	///< default baud rate for UART1
-#define UART2_DEFAULT_BAUD_RATE		9600	///< default baud rate for UART2
-#define UART3_DEFAULT_BAUD_RATE		9600	///< default baud rate for UART3
+#define UART0_DEFAULT_BAUD_RATE        9600    ///< default baud rate for UART0
+#define UART1_DEFAULT_BAUD_RATE        9600    ///< default baud rate for UART1
+#define UART2_DEFAULT_BAUD_RATE        9600    ///< default baud rate for UART2
+#define UART3_DEFAULT_BAUD_RATE        9600    ///< default baud rate for UART3
 
 
 // buffer memory allocation defines
 // buffer sizes
 #ifndef UART0_TX_BUFFER_SIZE
-#define UART0_TX_BUFFER_SIZE		0x00FF	///< number of bytes for uart0 transmit buffer
+#define UART0_TX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart0 transmit buffer
 #endif
 #ifndef UART0_RX_BUFFER_SIZE
-#define UART0_RX_BUFFER_SIZE		0x00FF	///< number of bytes for uart0 receive buffer
+#define UART0_RX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart0 receive buffer
 #endif
 
 #ifndef UART1_TX_BUFFER_SIZE
-#define UART1_TX_BUFFER_SIZE		0x00FF	///< number of bytes for uart1 transmit buffer
+#define UART1_TX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart1 transmit buffer
 #endif
 #ifndef UART1_RX_BUFFER_SIZE
-#define UART1_RX_BUFFER_SIZE		0x00FF	///< number of bytes for uart1 receive buffer
+#define UART1_RX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart1 receive buffer
 #endif
 
 #ifndef UART2_TX_BUFFER_SIZE
-#define UART2_TX_BUFFER_SIZE		0x00FF	///< number of bytes for uart2 transmit buffer
+#define UART2_TX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart2 transmit buffer
 #endif
 #ifndef UART2_RX_BUFFER_SIZE
-#define UART2_RX_BUFFER_SIZE		0x00FF	///< number of bytes for uart2 receive buffer
+#define UART2_RX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart2 receive buffer
 #endif
 
 #ifndef UART3_TX_BUFFER_SIZE
-#define UART3_TX_BUFFER_SIZE		0x00FF	///< number of bytes for uart3 transmit buffer
+#define UART3_TX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart3 transmit buffer
 #endif
 #ifndef UART3_RX_BUFFER_SIZE
-#define UART3_RX_BUFFER_SIZE		0x00FF	///< number of bytes for uart3 receive buffer
+#define UART3_RX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart3 receive buffer
 #endif
 
 // define this key if you wish to use
 // external RAM for the	UART buffers
 //#define UART_BUFFER_EXTERNAL_RAM
 #ifdef UART_BUFFER_EXTERNAL_RAM
-	// absolute address of uart0 buffers
-	#define UART0_TX_BUFFER_ADDR	0x1000
-	#define UART0_RX_BUFFER_ADDR	0x1100
-	// absolute address of uart1 buffers
-	#define UART1_TX_BUFFER_ADDR	0x1200
-    #define UART1_RX_BUFFER_ADDR	0x1300
-    // absolute address of uart1 buffers
-    #define UART2_TX_BUFFER_ADDR	0x1400
-    #define UART2_RX_BUFFER_ADDR	0x1500
-    // absolute address of uart1 buffers
-    #define UART3_TX_BUFFER_ADDR	0x1400
-    #define UART3_RX_BUFFER_ADDR	0x1500
+// absolute address of uart0 buffers
+#define UART0_TX_BUFFER_ADDR	0x1000
+#define UART0_RX_BUFFER_ADDR	0x1100
+// absolute address of uart1 buffers
+#define UART1_TX_BUFFER_ADDR	0x1200
+#define UART1_RX_BUFFER_ADDR	0x1300
+// absolute address of uart1 buffers
+#define UART2_TX_BUFFER_ADDR	0x1400
+#define UART2_RX_BUFFER_ADDR	0x1500
+// absolute address of uart1 buffers
+#define UART3_TX_BUFFER_ADDR	0x1400
+#define UART3_RX_BUFFER_ADDR	0x1500
 #endif
 
 //! Type of interrupt handler to use for uart interrupts.
 /// Value may be SIGNAL or ISR.
 /// \warning Do not change unless you know what you're doing.
 #ifndef UART_INTERRUPT_HANDLER
-#define UART_INTERRUPT_HANDLER	ISR
+#define UART_INTERRUPT_HANDLER    ISR
 #endif
 
 // UART global variables
 // flag variables
-extern volatile u08   uartReadyTx[4];
-extern volatile u08   uartBufferedTx[4];
+extern volatile u08 uartReadyTx[4];
+extern volatile u08 uartBufferedTx[4];
 
 // functions
 
@@ -156,8 +156,11 @@ void uart3Init(void);
 //! Initializes transmit and receive buffers.
 /// Automatically called from uartInit()
 void uart0InitBuffers(void);
+
 void uart1InitBuffers(void);
+
 void uart2InitBuffers(void);
+
 void uart3InitBuffers(void);
 
 //! Redirects received data to a user function.
@@ -170,11 +173,11 @@ void uartSetBaudRate(u08 nUart, u32 baudrate);
 
 //! Returns pointer to the receive buffer structure.
 ///
-cBuffer* uartGetRxBuffer(u08 nUart);
+cBuffer *uartGetRxBuffer(u08 nUart);
 
 //! Returns pointer to the transmit buffer structure.
 ///
-cBuffer* uartGetTxBuffer(u08 nUart);
+cBuffer *uartGetTxBuffer(u08 nUart);
 
 //! Sends a single byte over the uart.
 ///
@@ -183,8 +186,11 @@ void uartSendByte(u08 nUart, u08 data);
 //! SendByte commands with the UART number hardcoded
 /// Use these with printfInit() - example: \c printfInit(uart0SendByte);
 void uart0SendByte(u08 data);
+
 void uart1SendByte(u08 data);
+
 void uart2SendByte(u08 data);
+
 void uart3SendByte(u08 data);
 
 //! Gets a single byte from the uart receive buffer.
@@ -194,8 +200,11 @@ int uartGetByte(u08 nUart);
 //! Gets a single byte from the uart receive buffer.
 /// Returns the byte, or -1 if no byte is available (getchar-style).
 int uart0GetByte(void);
+
 int uart1GetByte(void);
+
 int uart2GetByte(void);
+
 int uart3GetByte(void);
 
 //! Gets a single byte from the uart receive buffer.
@@ -206,7 +215,7 @@ int uart3GetByte(void);
 /// char myReceivedByte;
 /// uartReceiveByte(0, &myReceivedByte );
 /// \endcode
-u08 uartReceiveByte(u08 nUart, u08* data);
+u08 uartReceiveByte(u08 nUart, u08 *data);
 
 //! Returns TRUE/FALSE if receive buffer is empty/not-empty.
 ///
@@ -223,8 +232,11 @@ void uartAddToTxBuffer(u08 nUart, u08 data);
 //! AddToTxBuffer commands with the UART number hardcoded
 /// Use this with printfInit() - example: \c printfInit(uart0AddToTxBuffer);
 void uart0AddToTxBuffer(u08 data);
+
 void uart1AddToTxBuffer(u08 data);
+
 void uart2AddToTxBuffer(u08 data);
+
 void uart3AddToTxBuffer(u08 data);
 
 //! Begins transmission of the transmit buffer under interrupt control.
@@ -237,6 +249,7 @@ u08 uartSendBuffer(u08 nUart, char *buffer, u16 nBytes);
 
 //! interrupt service handlers
 void uartTransmitService(u08 nUart);
+
 void uartReceiveService(u08 nUart);
 
 #endif

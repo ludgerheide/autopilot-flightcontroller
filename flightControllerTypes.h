@@ -13,7 +13,7 @@
 
 typedef struct {
     u32 timestamp;
-    
+
     u08 yaw;
     u08 pitch;
     u08 thrust;
@@ -23,11 +23,11 @@ commandSet_struct outputCommandSet;
 
 typedef struct {
     u32 timestamp;
-    
+
     BOOL altitudeInUse;
     s32 altitude; //Centimeters
     s08 pitchAngle; //Relative value
-    
+
     BOOL headingInUse;
     u16 heading; //Degrees
     s08 rateOfTurn; //Relative value
@@ -45,7 +45,7 @@ flightMode currentFlightMode;
 
 typedef struct {
     u32 timestamp;
-    
+
     float latitude;
     float longitude;
     float altitude; //Meters ASL

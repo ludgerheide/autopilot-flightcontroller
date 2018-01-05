@@ -67,13 +67,12 @@
 // include configuration
 #include "servoconf.h"
 
-typedef struct struct_ServoChannel
-{	
-	// hardware I/O port and pin for this channel
-	u08 port;
-	u08 pin;
-	// PWM duty setting which corresponds to servo position
-	u16 duty;
+typedef struct struct_ServoChannel {
+    // hardware I/O port and pin for this channel
+    u08 port;
+    u08 pin;
+    // PWM duty setting which corresponds to servo position
+    u16 duty;
 } ServoChannelType;
 
 // functions
@@ -106,6 +105,7 @@ void servoSetPosition(u08 channel, u08 position);
 //		Works like non-raw commands but position is not scaled.  Position must
 //		be between SERVO_MIN and SERVO_MAX
 void servoSetPositionRaw(u08 channel, u16 position);
+
 u16 servoGetPositionRaw(u08 channel);
 
 #endif

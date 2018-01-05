@@ -22,6 +22,6 @@ typedef struct {
 void batteryInit(void);
 
 //fills a batterys event withg current and voltage
-void batteryGetData(batteryEvent* event);
+void batteryGetData(batteryEvent *event);
 
 #endif /* battery_h */

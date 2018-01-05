@@ -22,7 +22,7 @@
 //Initializes the communications (the xBee serial and the RTS output pin)
 void commsInit(void);
 
-void commsProcessMessage(char* message, u08 size);
+void commsProcessMessage(char *message, u08 size);
 
 //Function to convert degrees to a fixed-point 16 byte integer
 s16 degreesToInt(float degrees);
@@ -37,7 +37,8 @@ void commsCheckAndSendTelemetry(void);
 void commsCheckAndSendLogging(void);
 
 //Called when a status is received
-void txStatusHandler(uint8_t frameID, __attribute__ ((unused)) uint8_t retryCount, __attribute__ ((unused)) uint8_t txStatus);
+void txStatusHandler(uint8_t frameID, __attribute__ ((unused)) uint8_t retryCount,
+                     __attribute__ ((unused)) uint8_t txStatus);
 
 
 #endif /* communicationsHandler_h */

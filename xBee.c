@@ -27,10 +27,13 @@ uint8_t received_index = 0;
 uint16_t received_size = 0;
 
 //The RX and ack handlers
-typedef uint8_t (*u08FuncPtr)(char* buffer, uint8_t numBytes);
+typedef uint8_t (*u08FuncPtr)(char *buffer, uint8_t numBytes);
+
 static u08FuncPtr serialTxFunc;
+
 //The handler for a transmit status
 typedef void (*txFuncPtr)(uint8_t frameID, uint8_t retryCount, uint8_t txStatus);
+
 static txFuncPtr txStatusFunc;
 
 //The TX and RX buffers
@@ -41,92 +44,91 @@ volatile bool xBeeNewMessageReady = false;
 
 //FUnction prototypes
 //Calaculates the checksum of a xBee API message
-static uint8_t xBeeGenerateChecksum(char* msg, uint8_t size);
+static uint8_t xBeeGenerateChecksum(char *msg, uint8_t size);
 
 void xBeeInit(void) {
     serialTxFunc = 0;
     txStatusFunc = 0;
-    
+
     //Initialize the xbee uart
     uartInit(XBEE_UART);
     uartSetBaudRate(XBEE_UART, 115200);
-    
-    uartSetRxHandler(XBEE_UART, xBeeByteReceiver );
+
+    uartSetRxHandler(XBEE_UART, xBeeByteReceiver);
 }
 
 //Sends out a buffer using the xBee api
 //shouldAck indicets whether the xBee should retransmit up to 10 times if the message is not acknowledged
-void xBeeSendPayload(char* payload, uint8_t bufferSize, bool shouldAck, uint8_t frameID) {
+void xBeeSendPayload(char *payload, uint8_t bufferSize, bool shouldAck, uint8_t frameID) {
     assert(bufferSize <= 100);
-    
+
     //Set the first byte of the buffer to 0x7E, the magic start number
     xBeeTxBuffer[0] = 0x7E;
-    
+
     //Add the size of address etc for the size we send to the xbee
     uint16_t sizeForMessage = bufferSize + TX_NONDATA_SIZE;
-    
+
     xBeeTxBuffer[1] = sizeForMessage << 8; //MSB goes here
     xBeeTxBuffer[2] = sizeForMessage; //LSB goes here
-    
+
     //Now set the frame type to 0x10
     xBeeTxBuffer[3] = 0x10;
-    
+
     //Now the frame ID. If it is 0, no ACK will be sent
     xBeeTxBuffer[4] = frameID;
-    
+
     //Now the destination address
-    for(uint8_t i = 0; i < 8; i++) {
-        xBeeTxBuffer[5+i] = destinationAddress[i];
+    for (uint8_t i = 0; i < 8; i++) {
+        xBeeTxBuffer[5 + i] = destinationAddress[i];
     };
-    
+
     // reserved (0xFFFE
     xBeeTxBuffer[13] = 0xFF;
     xBeeTxBuffer[14] = 0xFE;
-    
+
     //Broadcast radius
     xBeeTxBuffer[15] = 0x00;
-    
+
     //Transmit options, bit 0 indicates if the remote station should ACK
-    if(shouldAck) {
+    if (shouldAck) {
         xBeeTxBuffer[16] = __extension__ 0b00000000;
     } else {
         xBeeTxBuffer[16] = __extension__ 0b00000001;
     }
-    
+
     //Now the RF payload
     for (uint8_t i = 0; i < bufferSize; i++) {
         xBeeTxBuffer[17 + i] = payload[i];
     }
-    
+
     xBeeTxBuffer[17 + bufferSize] = xBeeGenerateChecksum(&xBeeTxBuffer[3], TX_NONDATA_SIZE + bufferSize);
-    #ifdef COMMS_DEBUG
+#ifdef COMMS_DEBUG
     for(u08 i = 0; i < bufferSize + 18; i++) {
         printf("%02x ", xBeeTxBuffer[i]);
     }
     printf("\r\n");
-    #endif
-    
+#endif
+
     //Now the payload is complete. Send it out over the serial port
     uint8_t result = uartSendBuffer(XBEE_UART, xBeeTxBuffer, bufferSize + 18);
-    
-    #ifdef COMMS_DEBUG
+
+#ifdef COMMS_DEBUG
     printf("uart: %i, size: %i, result: %i\r\n", XBEE_UART, bufferSize + 18, result);
-    #endif
-    
-    if(result != FALSE) {
+#endif
+
+    if (result != FALSE) {
         return;
-    }
-    else {
-        #ifdef COMMS_DEBUG
+    } else {
+#ifdef COMMS_DEBUG
         printf("Error Sending!\r\n");
-        #endif
+#endif
     }
 }
 
 //Calaculates the checksum of a xBee API message
-static uint8_t xBeeGenerateChecksum(char* msg, uint8_t size) {
+static uint8_t xBeeGenerateChecksum(char *msg, uint8_t size) {
     uint8_t checksum = 0x00;
-    for(uint8_t i = 0; i < size; i++) {
+    for (uint8_t i = 0; i < size; i++) {
         checksum += *(msg + i);
     }
     return 0xFF - checksum;
@@ -134,13 +136,12 @@ static uint8_t xBeeGenerateChecksum(char* msg, uint8_t size) {
 
 //Called if a byte is received over the serial port. Checks if it is a start byte and the fills th ebuffer accordingly
 void xBeeByteReceiver(unsigned char c) {
-    #ifdef COMMS_DEBUG
+#ifdef COMMS_DEBUG
     //printf("%u: %02x\r\n",received_index, c);
-    #endif
-    if(received_index == 0) {
+#endif
+    if (received_index == 0) {
         //We are looking for the start byte, 0x7E
-        if(c == 0x7E) {
-            ;
+        if (c == 0x7E) { ;
         } else {
             return;
         }
@@ -153,34 +154,34 @@ void xBeeByteReceiver(unsigned char c) {
     } else if (received_index < received_size + 3 && (received_index - 3) < RX_BUFFER_SIZE) {
         xBeeRxBuffer[received_index - 3] = c;
     } else if (received_index == received_size + 3) {
-        #ifdef COMMS_DEBUG
+#ifdef COMMS_DEBUG
         printf("RX complete\r\n!");
-        #endif
+#endif
         uint8_t checksum = xBeeGenerateChecksum(xBeeRxBuffer, received_size);
-        if(checksum == c) {
-            #ifdef COMMS_DEBUG
+        if (checksum == c) {
+#ifdef COMMS_DEBUG
             printf("Message complete and checked!\r\n!");
-            #endif
-            
+#endif
+
             //We have recieved a correnct message, set the "Ready" flag
             xBeeNewMessageReady = true;
         } else {
-            #ifdef COMMS_DEBUG
+#ifdef COMMS_DEBUG
             printf("Checksum failed!\r\n");
-            #endif
+#endif
 
             received_size = 0;
             received_index = 0;
         }
     } else {
-        #ifdef COMMS_DEBUG
+#ifdef COMMS_DEBUG
         printf("Buffer overflow @%i!\r\n", __LINE__);
         for(u08 i = 0; i < received_size; i++) {
             printf("%02x ", xBeeRxBuffer[i]);
         }
         printf("Size: %u\r\n", received_size);
-        #endif
-        
+#endif
+
         received_size = 0;
         received_index = 0;
         return;
@@ -192,35 +193,33 @@ void xBeeByteReceiver(unsigned char c) {
 void xBeeHandleMessage(void) {
 #define XBEE_MSGTYPE_TXSTATUS 0x8B
 #define XBEE_MSGTYPE_RECEIVE 0x90
-    
-    #ifdef COMMS_DEBUG
+
+#ifdef COMMS_DEBUG
     for(u08 i = 0; i < received_size; i++) {
         printf("%02x ", xBeeRxBuffer[i]);
     }
     printf("Size: %u\r\n", received_size);
-    #endif
-    
+#endif
+
     switch (xBeeRxBuffer[0]) {
-        case XBEE_MSGTYPE_RECEIVE:
-        {
-            char* protoBufMessage = &xBeeRxBuffer[12];
+        case XBEE_MSGTYPE_RECEIVE: {
+            char *protoBufMessage = &xBeeRxBuffer[12];
             uint8_t protoBufSize = received_size - 12;
             commsProcessMessage(protoBufMessage, protoBufSize);
         }
             break;
-            
-        case XBEE_MSGTYPE_TXSTATUS:
-        {
-            if(txStatusFunc) {
+
+        case XBEE_MSGTYPE_TXSTATUS: {
+            if (txStatusFunc) {
                 txStatusFunc(xBeeRxBuffer[1], xBeeRxBuffer[4], xBeeRxBuffer[5]);
             }
             break;
         }
-            
+
         default:
-            #ifdef COMMS_DEBUG
+#ifdef COMMS_DEBUG
             printf("Other packet type received!");
-            #endif
+#endif
             break;
     }
     //Reset the received index and "new message ready" flag
@@ -232,7 +231,7 @@ void xBeeHandleMessage(void) {
 //Attaches the "send buffer" function to send the completed message out.
 // The sendbuffer function must be of the format
 // void sendBufferFunc(char *buffer, uint8_t nBytes)
-void xBeeAttachSendFunction(uint8_t (*tx_func)(char* buffer, uint8_t numBytes)) {
+void xBeeAttachSendFunction(uint8_t (*tx_func)(char *buffer, uint8_t numBytes)) {
     serialTxFunc = tx_func;
 }
 

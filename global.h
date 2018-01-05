@@ -40,11 +40,11 @@
 //#define F_CPU        7372800               		// 7.37MHz processor
 //#define F_CPU        4000000               		// 4MHz processor
 //#define F_CPU        3686400               		// 3.69MHz processor
-#define CYCLES_PER_US ((F_CPU+500000)/1000000) 	// cpu cycles per microsecond
+#define CYCLES_PER_US ((F_CPU+500000)/1000000)    // cpu cycles per microsecond
 
 typedef struct {
     u32 timestamp;
-    
+
     float courseMagnetic;
     float pitch;
     float roll;

@@ -34,18 +34,19 @@ s08 calculateRateOfTurn(s16 wantedCourse) {
         }
     }
     difference = wantedCourse - currentCourse;
-    
+
     assert(abs(difference) <= 180);
-    
+
     //Invert the difference
     difference *= -1;
-    
-    s08 rateOfTurn = maps32(difference, -DEVIATION_FOR_MAXIMUM_RATE_OF_TURN, DEVIATION_FOR_MAXIMUM_RATE_OF_TURN, INT8_MIN, INT8_MAX);
-    
+
+    s08 rateOfTurn = maps32(difference, -DEVIATION_FOR_MAXIMUM_RATE_OF_TURN, DEVIATION_FOR_MAXIMUM_RATE_OF_TURN,
+                            INT8_MIN, INT8_MAX);
+
 #ifdef FLIGHT_CONTROLLER_DEBUG
     printf("Current: %i Wanted: %i Difference: %i rateOfTurn: %i\r\n", currentCourse, wantedCourse, difference, rateOfTurn);
 #endif
-    
+
     return rateOfTurn;
 }
 
@@ -55,12 +56,13 @@ s08 calculateRateOfTurn(s16 wantedCourse) {
 //OUTPUT: *unsigned* 8-bit value to go to the servo
 u08 calculateRudderValue(s08 targetRateOfTurn) {
     float yawRate = curGyro.z; //Positive value means turning to the right (clockwise), negative left (counteclockwise)
-    
+
     //Interpret the input value as rotation and calculate the error
-    float wantedYawRate = mapfloat(targetRateOfTurn, INT8_MIN, INT8_MAX, -MAX_YAW_ROTATION_COMMAND, MAX_YAW_ROTATION_COMMAND);
+    float wantedYawRate = mapfloat(targetRateOfTurn, INT8_MIN, INT8_MAX, -MAX_YAW_ROTATION_COMMAND,
+                                   MAX_YAW_ROTATION_COMMAND);
     float yawDifference = wantedYawRate - yawRate;
     float normalizedYawDifference = mapfloat(yawDifference, -MAX_YAW_ROTATION_ERROR, MAX_YAW_ROTATION_ERROR, -1, 1);
-    
+
     //Add the results from the different controllers (just one for now)
     float normalizedRudder = YAW_RATE_GAIN * normalizedYawDifference;
     return mapfloat(normalizedRudder, -1, 1, 0, UINT8_MAX);

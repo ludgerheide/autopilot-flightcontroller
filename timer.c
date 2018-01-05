@@ -12,11 +12,9 @@
 #include <avr/interrupt.h>
 #include "avrlibdefs.h"
 
-#include <stdio.h>
-
 #ifndef CRITICAL_SECTION_START
-#define CRITICAL_SECTION_START	unsigned char _sreg = SREG; cli()
-#define CRITICAL_SECTION_END	SREG = _sreg
+#define CRITICAL_SECTION_START    unsigned char _sreg = SREG; cli()
+#define CRITICAL_SECTION_END    SREG = _sreg
 #endif
 
 #define MICROSECONDS_PER_TICK ((64*1000000UL)/F_CPU)
@@ -29,18 +27,18 @@ static void (*timerInterruptCallback)(u32 millis);
 void timerInit(void) {
     //Clear the interrupt callback
     timerInterruptCallback = 0;
-    
+
     //Set the CTC match to 250 timer ticks (1000ms @ 16MHz)
     OCR0A = 249;
-    
+
     //Initialize the timer in CTC mode
     sbi(TCCR0A, WGM01);
-    
+
     //Enable the "compare match a" interrupt
     sbi(TIMSK0, OCIE0A);
-    
+
     //Set the prescaler for timer 0 to 64 (this starts the timer)
-    outb(TCCR0B, BV(CS00)|BV(CS01));
+    outb(TCCR0B, BV(CS00) | BV(CS01));
 }
 
 u32 millis(void) {
@@ -56,7 +54,7 @@ u32 millis(void) {
 u32 micros(void) {
     CRITICAL_SECTION_START;
     u32 microseconds = TCNT0;
-    if(microseconds != 249 && inb(TIFR0) & _BV(OCF0A)) {
+    if (microseconds != 249 && inb(TIFR0) & _BV(OCF0A)) {
         //We have a pending millis increment
         microseconds += (250 * millisCounter);
         microseconds += 250;
@@ -71,7 +69,7 @@ u32 micros(void) {
 //The timer 0 overflow ISR
 ISR(TIMER0_COMPA_vect) {
     millisCounter++;
-    if(timerInterruptCallback) {
+    if (timerInterruptCallback) {
         timerInterruptCallback(millisCounter);
     }
 }
