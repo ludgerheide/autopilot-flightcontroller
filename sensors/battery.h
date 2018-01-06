@@ -13,9 +13,10 @@
 
 //Structs
 typedef struct {
-    float voltage;
-    float current;
-    u32 timestamp;
+    u64 timestamp; //microseconds
+
+    u16 voltage; //mV
+    u16 current; //mA
 } batteryEvent;
 
 //Initializes the ADC. Setd everything up and starts the first volatage measurement

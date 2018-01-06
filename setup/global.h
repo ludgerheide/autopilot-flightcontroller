@@ -30,6 +30,7 @@
 #include "../sensors/gyro.h"
 #include "../sensors/accelMag.h"
 #include "../sensors/battery.h"
+#include "../sensors/bmp280.h"
 
 // project/system dependent defines
 
@@ -43,20 +44,19 @@
 #define CYCLES_PER_US ((F_CPU+500000)/1000000)    // cpu cycles per microsecond
 
 typedef struct {
-    u32 timestamp;
+    u64 timestamp;
 
-    float courseMagnetic;
-    float pitch;
-    float roll;
+    u16 courseMagnetic;
+    s16 pitch;
+    s16 roll;
 } attitude_struct;
 attitude_struct currentAttitude;
 
 pressureEvent bmp180staticPressure, bmp280pitotPressure;
+altitudeData myAltitudeData;
+airspeed_struct myAirspeed;
 magEvent uncompensatedMag, curMag;
 accelEvent curAccel;
 gyroEvent curGyro;
 batteryEvent curBattery;
-
-float seaLevelPressure; //Initialize to standard pressure for now
-
 #endif

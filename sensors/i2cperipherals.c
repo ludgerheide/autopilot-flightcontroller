@@ -22,7 +22,6 @@
 #include <avr/interrupt.h>
 #include "../avrlib/i2c.h"
 #include "../avrlib/timer.h"
-#include "bmp280.h"
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START    unsigned char _sreg = SREG; cli()
@@ -63,7 +62,7 @@ void IMUinit() {
         gyroEnableDrdy();
     } else {
 #ifdef IMU_DEBUG
-        printf("Error intitializing the gyro!\r\n");
+        printf_P(PSTR("Error intitializing the gyro!\r\n"));
 #endif
         theFlags.gyroEnabled = FALSE;
     }
@@ -90,7 +89,7 @@ void IMUinit() {
         accelEnableDrdy();
     } else {
 #ifdef IMU_DEBUG
-        printf("Error intitializing the accelerometer!\r\n");
+        printf_P(PSTR("Error intitializing the accelerometer!\r\n"));
 #endif
         theFlags.accelEnabled = FALSE;
     }
@@ -113,7 +112,7 @@ void IMUinit() {
         sbi(EIMSK, INT3);
     } else {
 #ifdef IMU_DEBUG
-        printf("Error intitializing the magnetometer!\r\n");
+        printf_P(PSTR("Error intitializing the magnetometer!\r\n"));
 #endif
         theFlags.magEnabled = FALSE;
     }
@@ -134,7 +133,7 @@ void IMUinit() {
 
     } else {
 #ifdef IMU_DEBUG
-        printf("Error intitializing the BMP180!\r\n");
+        printf_P(PSTR("Error intitializing the BMP180!\r\n"));
 #endif
         theFlags.bmp180Enabled = FALSE;
     }
@@ -160,7 +159,7 @@ void IMUinit() {
 
     } else {
 #ifdef BMP280_DEBUG
-        printf("Error intitializing the BMP280!\r\n");
+        printf_P(PSTR("Error intitializing the BMP280!\r\n"));
 #endif
         theFlags.bmp280Enabled = FALSE;
     }
@@ -184,7 +183,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
     //First, find out what just happened
     if (statusReg == TW_MT_DATA_ACK) {
 #ifdef IMU_DEBUG
-        printf("SH: Transmission complete from 0x%x\r\n", deviceaddress);
+        printf_P(PSTR("SH: Transmission complete from 0x%x\r\n"), deviceaddress);
 #endif
 
         //Now we should receive data for the correct device
@@ -224,7 +223,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                 switch (myBmp180State) {
                     case BMP180_TEMPERATURE_MEASURING:
 #ifdef IMU_DEBUG
-                        printf("BMP: Temp in progress\r\n");
+                        printf_P(PSTR("BMP: Temp in progress\r\n"));
 #endif
 
                         //We have not decided what to do on the bus yet, so decide it
@@ -234,7 +233,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
                     case BMP180_TEMPERATURE_READY:
 #ifdef IMU_DEBUG
-                        printf("BMP: Temp ready\r\n");
+                        printf_P(PSTR("BMP: Temp ready\r\n"));
 #endif
                         assert(theFlags.bmp180Ready);
                         assert(millis() - bmp180LastStateChange >= BMP180_TEMPERATURE_DURATION);
@@ -248,7 +247,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
                     case BMP180_PRESSURE_MEASURING:
 #ifdef IMU_DEBUG
-                        printf("BMP: Pressure in progress\r\n");
+                        printf_P(PSTR("BMP: Pressure in progress\r\n"));
 #endif
 
                         //We have not decided what to do on the bus yet, so decide it
@@ -258,7 +257,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
                     case BMP180_PRESSURE_READY:
 #ifdef IMU_DEBUG
-                        printf("BMP: Pressure ready\r\n");
+                        printf_P(PSTR("BMP: Pressure ready\r\n"));
 #endif
 
                         assert(theFlags.bmp180Ready);
@@ -283,7 +282,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                 switch (bmp280_0x76.state) {
                     case BMP280_MEASURING:
 #ifdef BMP280_DEBUG
-                        printf("BMP280: in progress\r\n");
+                        printf_P(PSTR("BMP280: in progress\r\n"));
 #endif
 
                         //We have not decided what to do on the bus yet, so decide it
@@ -292,7 +291,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                         break;
                     case BMP280_READY:
 #ifdef BMP280_DEBUG
-                        printf("BMP280: ready\r\n");
+                        printf_P(PSTR("BMP280: ready\r\n"));
 #endif
 
                         assert(theFlags.bmp280Ready);
@@ -311,14 +310,14 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
             default:
 #ifdef IMU_DEBUG
-                printf("Invalid address at line %i", __LINE__);
+                printf_P(PSTR("Invalid address at line %i"), __LINE__);
 #endif
                 break;
         }
 
     } else if (statusReg == TW_MR_DATA_NACK) {
 #ifdef IMU_DEBUG
-        printf("SH: Reception complete\r\n");
+        printf_P(PSTR("SH: Reception complete\r\n"));
 #endif
 
         //First, get the data out of the RX buffer
@@ -377,7 +376,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                 switch (myBmp180State) {
                     case BMP180_TEMPERATURE_RECEIVING:
 #ifdef IMU_DEBUG
-                        printf("BMP: Temp finished receiving\r\n");
+                        printf_P(PSTR("BMP: Temp finished receiving\r\n"));
 #endif
                         bmp180GetTempDataFromI2cBuffer();
 
@@ -389,7 +388,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
                     case BMP180_PRESSURE_RECEIVING:
 #ifdef IMU_DEBUG
-                        printf("BMP: Temp finished receiving\r\n");
+                        printf_P(PSTR("BMP: Temp finished receiving\r\n"));
 #endif
                         bmp180GetPressDataFromI2cBuffer();
 
@@ -405,7 +404,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                 break;
             case BMP280_ADDRESS2:
 #ifdef BMP280_DEBUG
-                printf("BMP280: finished receiving\r\n");
+                printf_P(PSTR("BMP280: finished receiving\r\n"));
 #endif
                 assert(bmp280_0x76.state == BMP280_RECEIVING);
                 bmp280GetDataFromI2cBuffer(&bmp280_0x76);
@@ -418,14 +417,14 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
 
             default:
 #ifdef IMU_DEBUG
-                printf("Invalid address at line %i\r\n", __LINE__);
+                printf_P(PSTR("Invalid address at line %i\r\n"), __LINE__);
 #endif
                 break;
         }
 
     } else {
 #ifdef IMU_DEBUG
-        printf("SH: Error!\r\n");
+        printf_P(PSTR("SH: Error!\r\n"));
 #endif
 
         //Reset the bus
@@ -442,31 +441,31 @@ static void checkForPendingTransmissionsOrStop() {
         //Send a data request
         accelSendDataRequest();
 #ifdef IMU_DEBUG
-        printf("Sending accel data request! @l: %i\r\n", __LINE__);
+        printf_P(PSTR("Sending accel data request! @l: %i\r\n"), __LINE__);
 #endif
     } else if (theFlags.gyroReady) {
         //Send the data request
         gyroSendDataRequest();
 #ifdef IMU_DEBUG
-        printf("Sending gyro data request! @l: %i\r\n", __LINE__);
+        printf_P(PSTR("Sending gyro data request! @l: %i\r\n"), __LINE__);
 #endif
     } else if (theFlags.magReady) {
         //Send a data request
         magSendDataRequest();
 #ifdef IMU_DEBUG
-        printf("Sending mag data request! @l: %i\r\n", __LINE__);
+        printf_P(PSTR("Sending mag data request! @l: %i\r\n"), __LINE__);
 #endif
     } else if (theFlags.bmp180Ready) {
         //Assert there is actually something ready
         assert(myBmp180State == BMP180_TEMPERATURE_READY || myBmp180State == BMP180_PRESSURE_READY);
         if (myBmp180State == BMP180_TEMPERATURE_READY) {
 #ifdef IMU_DEBUG
-            printf("Starting temp data request! @l: %i\r\n", __LINE__);
+            printf_P(PSTR("Starting temp data request! @l: %i\r\n"), __LINE__);
 #endif
             bmp180StartReceivingTemperature();
         } else if (myBmp180State == BMP180_PRESSURE_READY) {
 #ifdef IMU_DEBUG
-            printf("Starting pressure data request! @l: %i\r\n", __LINE__);
+            printf_P(PSTR("Starting pressure data request! @l: %i\r\n"), __LINE__);
 #endif
             bmp180StartReceivingPressure();
         }
@@ -474,12 +473,12 @@ static void checkForPendingTransmissionsOrStop() {
         //Assert there is actually something ready
         assert(bmp280_0x76.state == BMP280_READY);
 #ifdef BMP280_DEBUG
-        printf("Starting temp/press (BMP280) data request! @l: %i\r\n", __LINE__);
+        printf_P(PSTR("Starting temp/press (BMP280) data request! @l: %i\r\n"), __LINE__);
 #endif
         bmp280StartReceiving(&bmp280_0x76);
     } else {
 #ifdef IMU_DEBUG
-        printf("IMU: Sending stop!\r\n");
+        printf_P(PSTR("IMU: Sending stop!\r\n"));
 #endif
         //Nothing to be done. Send a STOP condition
         outb(TWCR, (inb(TWCR) & TWCR_CMD_MASK) | BV(TWINT) | BV(TWEA) | BV(TWSTO));
@@ -493,7 +492,7 @@ void imuTimerTick(u32 millis) {
             case BMP180_TEMPERATURE_MEASURING:
                 if (millis - bmp180LastStateChange >= BMP180_TEMPERATURE_DURATION) {
 #ifdef IMU_DEBUG
-                    printf("TCB: Temp ready\r\n");
+                    printf_P(PSTR("TCB: Temp ready\r\n"));
 #endif
                     //The measurement is ready
                     myBmp180State = BMP180_TEMPERATURE_READY;
@@ -509,7 +508,7 @@ void imuTimerTick(u32 millis) {
             case BMP180_PRESSURE_MEASURING:
                 if (millis - bmp180LastStateChange >= BMP180_PRESSURE_DURATION) {
 #ifdef IMU_DEBUG
-                    printf("TCB: Pressure ready\r\n");
+                    printf_P(PSTR("TCB: Pressure ready\r\n"));
 #endif
                     //The measurement is ready
                     myBmp180State = BMP180_PRESSURE_READY;
@@ -532,7 +531,7 @@ void imuTimerTick(u32 millis) {
         if (bmp280_0x76.state == BMP280_MEASURING &&
             millis - bmp280_0x76.lastStateChange > bmp280_0x76.measurement_time) {
 #ifdef BMP280_DEBUG
-            printf("BMP280: Data ready (Timer ISR)\r\n");
+            printf_P(PSTR("BMP280: Data ready (Timer ISR)\r\n"));
 #endif
             bmp280_0x76.state = BMP280_READY;
             theFlags.bmp280Ready = TRUE;
@@ -545,7 +544,7 @@ void imuTimerTick(u32 millis) {
     }
 #ifdef IMU_DEBUG
     else {
-        printf("BMP disabled at line %i", __LINE__);
+        printf_P(PSTR("BMP disabled at line %i"), __LINE__);
     }
 #endif
 
@@ -554,7 +553,7 @@ void imuTimerTick(u32 millis) {
 ISR(INT3_vect) {
     //This is the handler for the mag-DRDY interrupt
 #ifdef IMU_DEBUG
-    printf("Mag-DRDY received! %lu\r\n", millis());
+    printf_P(PSTR("Mag-DRDY received! %lu\r\n"), millis());
 #endif
     //Set the flag to true if it isn't already
     if (!theFlags.magReady) {
@@ -562,17 +561,17 @@ ISR(INT3_vect) {
     }
 #ifdef IMU_DEBUG
     else {
-        printf("WARNING: theflags.magReady at 1!\r\n");
+        printf_P(PSTR("WARNING: theflags.magReady at 1!\r\n"));
     }
 #endif
 
     //Set the timestamp
-    myMagRawData.timestamp = micros();
+    myMagRawData.timestamp = micros64();
 
     //Start the transmission or enqueue it
     if (I2cState == I2C_IDLE) {
 #ifdef IMU_DEBUG
-        printf("I2C idle, starting tx!\r\n");
+        printf_P(PSTR("I2C idle, starting tx!\r\n"));
 #endif
         //Send a data request
         magSendDataRequest();
@@ -580,7 +579,7 @@ ISR(INT3_vect) {
 #ifdef IMU_DEBUG
     else {
         
-        printf("I2C busy, just setting flag!\r\n");
+        printf_P(PSTR("I2C busy, just setting flag!\r\n"));
     }
 #endif
 }
@@ -588,7 +587,7 @@ ISR(INT3_vect) {
 ISR(INT2_vect) {
     //This is the external interrupt for accel-DRDY on LIN1
 #ifdef IMU_DEBUG
-    printf("Accel-DRDY received!\r\n");
+    printf_P(PSTR("Accel-DRDY received!\r\n"));
 #endif
 
     //Set the flag to true if it isn't already
@@ -597,17 +596,17 @@ ISR(INT2_vect) {
     }
 #ifdef IMU_DEBUG
     else {
-        printf("WARNING: theflags.accelReady at 1!\r\n");
+        printf_P(PSTR("WARNING: theflags.accelReady at 1!\r\n"));
     }
 #endif
 
     //Set the timestamp
-    myAccelRawData.timestamp = micros();
+    myAccelRawData.timestamp = micros64();
 
     //Start the transmission or enqueue it
     if (I2cState == I2C_IDLE) {
 #ifdef IMU_DEBUG
-        printf("I2C idle, starting tx!\r\n");
+        printf_P(PSTR("I2C idle, starting tx!\r\n"));
 #endif
         //Send a data request
         accelSendDataRequest();
@@ -615,7 +614,7 @@ ISR(INT2_vect) {
 #ifdef IMU_DEBUG
     else {
         
-        printf("I2C busy, just setting flag!\r\n");
+        printf_P(PSTR("I2C busy, just setting flag!\r\n"));
     }
 #endif
 }
@@ -623,7 +622,7 @@ ISR(INT2_vect) {
 ISR(INT4_vect) {
     //This is the external interrupt for GRDY
 #ifdef IMU_DEBUG
-    printf("GRDY received!\r\n");
+    printf_P(PSTR("GRDY received!\r\n"));
 #endif
 
     //Increment the flag but don't roll it Over
@@ -632,16 +631,16 @@ ISR(INT4_vect) {
     }
 #ifdef IMU_DEBUG
     else {
-        printf("WARNING: theflags.gyroReady at 1!\r\n");
+        printf_P(PSTR("WARNING: theflags.gyroReady at 1!\r\n"));
     }
 #endif
 
     //Set the timestamp
-    myGyroRawData.timestamp = micros();
+    myGyroRawData.timestamp = micros64();
 
     if (I2cState == I2C_IDLE) {
 #ifdef IMU_DEBUG
-        printf("I2C idle, starting tx!\r\n");
+        printf_P(PSTR("I2C idle, starting tx!\r\n"));
 #endif
         //Send the data request
         gyroSendDataRequest();
@@ -649,7 +648,7 @@ ISR(INT4_vect) {
 #ifdef IMU_DEBUG
     else {
         
-        printf("I2C busy, just setting flag!\r\n");
+        printf_P(PSTR("I2C busy, just setting flag!\r\n"));
     }
 #endif
 }

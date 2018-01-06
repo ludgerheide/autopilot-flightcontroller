@@ -99,6 +99,12 @@ typedef enum {
     BMP280_RECEIVING,
 } bmp280State;
 
+typedef struct {
+    u64 timestamp; //Microseconds
+
+    u32 speed;
+} airspeed_struct;
+
 
 typedef struct {
     u08 address;
@@ -133,5 +139,7 @@ void bmp280GetDataFromI2cBuffer(bmp280_configuration *configuration);
 
 //Gets the altitude from the bmp
 void bmp280GetData(pressureEvent *myEvent, bmp280_configuration *configuration);
+
+void calculateAirspeed(pressureEvent *pitotPressure, pressureEvent *staticPressure, airspeed_struct *airspeed);
 
 #endif //FLIGHTCONTROLLER_BMP280_H

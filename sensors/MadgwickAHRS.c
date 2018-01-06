@@ -288,7 +288,7 @@ float fast_atan(float x) {
     return M_PI_4 * x - x * (fabs(x) - 1) * (0.2447 + 0.0663 * fabs(x));
 }
 
-void getYawPitchRollDegrees(float *yaw, float *pitch, float *roll) {
+void getYawPitchRollDegrees(u16 *yaw, s16 *pitch, s16 *roll) {
     float gx, gy, gz; // estimated gravity direction
 
     gx = 2 * (q1 * q3 - q0 * q2);
@@ -296,16 +296,17 @@ void getYawPitchRollDegrees(float *yaw, float *pitch, float *roll) {
     gz = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
 
     //Dubtract 90 to compensate for sesnsor direction, then Flip yaw to a 0-360 scale
-    *yaw = (180 / M_PI) * fast_atan2(2 * q1 * q2 - 2 * q0 * q3, 2 * q0 * q0 + 2 * q1 * q1 - 1);
-    *yaw -= 90;
-    if (*yaw < 0) {
-        *yaw += 360;
+    float myYaw = (180 / M_PI) * fast_atan2(2 * q1 * q2 - 2 * q0 * q3, 2 * q0 * q0 + 2 * q1 * q1 - 1);
+    myYaw -= 90;
+    if (myYaw < 0) {
+        myYaw += 360;
     }
+    *yaw = myYaw * 64;
 
     //Switch pitch and roll because of the final assembly direction
     //And invert the roll
-    *roll = -(180 / M_PI) * fast_atan(gx / sqrt(gy * gy + gz * gz));
-    *pitch = (180 / M_PI) * fast_atan(gy / sqrt(gx * gx + gz * gz));
+    *roll = 64 * -(180 / M_PI) * fast_atan(gx / sqrt(gy * gy + gz * gz));
+    *pitch = 64 * (180 / M_PI) * fast_atan(gy / sqrt(gx * gx + gz * gz));
 }
 
 

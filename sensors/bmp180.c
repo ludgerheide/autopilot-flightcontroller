@@ -164,7 +164,7 @@ void bmp180GetPressDataFromI2cBuffer(void) {
     myBmp180RawData.presslo = I2cReceiveData[1];
     myBmp180RawData.pressxlo = I2cReceiveData[2];
 
-    myBmp180RawData.timestamp = micros();
+    myBmp180RawData.timestamp = micros64();
 }
 
 void bmp180GetTempDataFromI2cBuffer(void) {
@@ -230,22 +230,22 @@ void bmp180GetData(pressureEvent *myEvent) {
     x2 = (-7357 * p) >> 16;
     compp = p + ((x1 + x2 + 3791) >> 4);
 
-    myEvent->pressure = compp / 100.0; //Divide by 100 to convert to hPa
+    myEvent->pressure = compp * 256; //Multiply by 256 to get 256*Pa
 
     //Temperature output (?)
     int32_t UT, B5;     // following ds convention
-    float t;
+    s32 t;
 
     UT = rawTemp;
 
     B5 = computeB5(UT);
     t = (B5 + 8) >> 4;
-    t /= 10;
+    t *= 10; //Convert to 100*degrees c
 
     myEvent->temperature = t;
 }
 
-float pressureToAltitude(float atmosphericPressure, float theSeaLevelPressure) {
+static s32 pressureToAltitude(u32 atmosphericPressure, float theSeaLevelPressure) {
     // Equation taken from BMP180 datasheet (page 16):
     //  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
 
@@ -253,5 +253,27 @@ float pressureToAltitude(float atmosphericPressure, float theSeaLevelPressure) {
     // at high altitude.  See this thread for more information:
     //  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
 
-    return 44330.0 * (1.0 - pow(atmosphericPressure / theSeaLevelPressure, 0.1903));
+    float atmosphericPressure_hPa = atmosphericPressure / (256.0 * 100.0);
+    s32 altitude = 100 * 44330.0 * (1.0 - pow(atmosphericPressure_hPa / theSeaLevelPressure, 0.1903));
+    return altitude;
+}
+
+//Updates the altitude struct
+void updateAltitudeData(pressureEvent *staticPressure, altitudeData *myAltitudeData) {
+    //Only do something if we are actually using new data
+    if (staticPressure->timestamp == myAltitudeData->timestamp) {
+        return;
+    }
+    //Get the altitudes and time difference
+    s32 oldAltitude = myAltitudeData->altitude;
+    s32 newAltitude = pressureToAltitude(staticPressure->pressure, mySeaLevelPressure.slp);
+
+    float dt_in_seconds = (staticPressure->timestamp - myAltitudeData->timestamp) / 1000000.0;
+
+    //TODO: Lo
+    s32 current_rate_of_climb = (newAltitude - oldAltitude) / dt_in_seconds;
+
+    myAltitudeData->timestamp = staticPressure->timestamp;
+    myAltitudeData->altitude = newAltitude;
+    myAltitudeData->rate_of_climb = current_rate_of_climb;
 }

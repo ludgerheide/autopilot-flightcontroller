@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include "avrlib/avrlibtypes.h"
-#include "control/flightControllerTypes.h"
+#include "control/flightControllerTypesAndGlobals.h"
 
 //Attaches the prinbtf function to the raspi UART
 void printfAttachToUart(void);

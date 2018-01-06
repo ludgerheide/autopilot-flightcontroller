@@ -30,7 +30,7 @@ void MadgwickAHRSupdate(u32 currentTime, float gx, float gy, float gz, float ax,
 
 void MadgwickAHRSupdateIMU(u32 currentTime, float gx, float gy, float gz, float ax, float ay, float az);
 
-void getYawPitchRollDegrees(float *yaw, float *pitch, float *roll);
+void getYawPitchRollDegrees(u16 *yaw, s16 *pitch, s16 *roll);
 
 #endif
 //=====================================================================================================

@@ -77,17 +77,17 @@ typedef enum {
 
 //Structs
 typedef struct {
-    float x;
-    float y;
-    float z;
-    u32 timestamp;
+    float x; //m/s²
+    float y; //m/s²
+    float z; //m/s²
+    u64 timestamp;
 } accelEvent;
 
 typedef struct {
-    float x;
-    float y;
-    float z;
-    u32 timestamp;
+    float x; //mT?
+    float y; //mT?
+    float z; //mT?
+    u64 timestamp;
 } magEvent;
 
 typedef struct accelRawData {
@@ -97,7 +97,7 @@ typedef struct accelRawData {
     u08 yhi;
     u08 zlo;
     u08 zhi;
-    u32 timestamp;
+    u64 timestamp;
 } accelRawData;
 
 typedef struct magRawData {
@@ -107,7 +107,7 @@ typedef struct magRawData {
     u08 yhi;
     u08 zlo;
     u08 zhi;
-    u32 timestamp;
+    u64 timestamp;
 } magRawData;
 
 //Variables

@@ -17,8 +17,11 @@ void timerInit(void);
 //Returns the millisecond counter's value (resets every 49 days)
 u32 millis(void);
 
-//Returns the microseconds since the start (4µs accuracy @ 16MHz)
+//Returns the microseconds since the start (4µs accuracy @ 16MHz, resets every hour or so)
 u32 micros(void);
+
+//Returns the microseconds since the start (4µs accuracy @ 16MHz, resets every 49 days)
+u64 micros64(void);
 
 //Attaches a function that is called each timer interrupt (1ms @16MHz)
 void timerSetInterruptCallback(void (*timerInterrupt_func)(u32 millis));

@@ -94,7 +94,7 @@ u08 nmeaProcess(cBuffer *rxBuffer) {
                 bufferGetFromFront(rxBuffer);
 
 #ifdef GPS_DEBUG
-                printf("Rx NMEA\r\n");
+                printf_P(PSTR("Rx NMEA\r\n"));
 #endif
                 // found a packet
                 // done with this processing session
@@ -170,7 +170,7 @@ void nmeaProcessGPGGA(u08 *packet) {
     // 0 = Invalid, 1 = Valid SPS, 2 = Valid DGPS, 3 = Valid PPS
     // check for good position fix
     if ((packet[i] != '0') && (packet[i] != ',')) {
-        u32 now = millis();
+        u64 now = micros64();
         GpsInfo.PosLLA.timestamp = now;
         GpsInfo.VelHS.timestamp = now;
     }
@@ -181,8 +181,8 @@ void nmeaProcessGPGGA(u08 *packet) {
     while (packet[i++] != ',');                // next field: HDOP (horizontal dilution of precision)
     while (packet[i++] != ',');                // next field: altitude
 
-    // get altitude (in meters)
-    GpsInfo.PosLLA.alt = strtod((char *) &packet[i], &endptr);
+    // get altitude (in centimeters)
+    GpsInfo.PosLLA.alt = 100 * strtod((char *) &packet[i], &endptr);
 
     while (packet[i++] != ',');                // next field: altitude units, always 'M'
     while (packet[i++] != ',');                // next field: geoid seperation
@@ -191,7 +191,7 @@ void nmeaProcessGPGGA(u08 *packet) {
     while (packet[i++] != ',');                // next field: DGPS station ID
     while (packet[i++] != '*');                // next field: checksum
 #ifdef GPS_DEBUG
-    printf("Lat: %f, Lon: %f, time: %lu\r\n", GpsInfo.PosLLA.lat, GpsInfo.PosLLA.lon, GpsInfo.PosLLA.timestamp);
+    printf_P(PSTR("Lat: %f, Lon: %f, time: %lu\r\n"), GpsInfo.PosLLA.lat, GpsInfo.PosLLA.lon, GpsInfo.PosLLA.timestamp);
 #endif
 }
 
@@ -210,7 +210,7 @@ void nmeaProcessGPVTG(u08 *packet) {
         return;
 
     // get course (true north ref) in degrees [ddd.dd]
-    GpsInfo.VelHS.heading = strtod((char *) &packet[i], &endptr);
+    GpsInfo.VelHS.heading = 64 * strtod((char *) &packet[i], &endptr);
     while (packet[i++] != ',');                // next field: 'T'
     while (packet[i++] != ',');                // next field: course (magnetic north)
 
@@ -224,8 +224,8 @@ void nmeaProcessGPVTG(u08 *packet) {
     while (packet[i++] != ',');                // next field: 'N'
     while (packet[i++] != ',');                // next field: speed (km/h)
 
-    // get speed in km/h
-    GpsInfo.VelHS.speed = strtod((char *) &packet[i], &endptr);
+    // get speed in cm/s
+    GpsInfo.VelHS.speed = (100.0 / 3.6) * strtod((char *) &packet[i], &endptr);
     while (packet[i++] != ',');                // next field: 'K'
     while (packet[i++] != '*');                // next field: checksum
 }

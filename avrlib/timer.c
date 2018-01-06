@@ -66,6 +66,11 @@ u32 micros(void) {
     return microseconds * MICROSECONDS_PER_TICK;
 }
 
+//Returns the microseconds since the start (4µs accuracy @ 16MHz, resets every 49 days)
+u64 micros64(void) {
+    return (u64) millis() * 1000 + micros() % 1000;
+}
+
 //The timer 0 overflow ISR
 ISR(TIMER0_COMPA_vect) {
     millisCounter++;

@@ -57,10 +57,10 @@ typedef enum {                                             // DEFAULT    TYPE
 
 //Structs
 typedef struct {
-    float x;
-    float y;
-    float z;
-    u32 timestamp;
+    float x; //rad/s?
+    float y; //rad/s?
+    float z; //rad/s?
+    u64 timestamp;
 } gyroEvent;
 
 typedef struct gyroRawData {
@@ -70,7 +70,7 @@ typedef struct gyroRawData {
     u08 yhi;
     u08 zlo;
     u08 zhi;
-    u32 timestamp;
+    u64 timestamp;
 } gyroRawData;
 
 //Variables

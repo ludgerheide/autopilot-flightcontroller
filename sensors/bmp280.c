@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <avr/io.h>
+#include <math.h>
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START    unsigned char _sreg = SREG; cli()
@@ -121,9 +122,9 @@ bmp280_configuration bmp280_defaults(void) {
             .state = BMP280_IDLE,
             .lastStateChange = 0,
             //Default to "high-res mode", according to page 18 of the datasheet it's
-            .temperature_mode = BMP280_MODE_1X,
-            .pressure_mode = BMP280_MODE_8X,
-            .measurement_time = 23};
+            .temperature_mode = BMP280_MODE_2X,
+            .pressure_mode = BMP280_MODE_16X,
+            .measurement_time = 39};
     return config;
 }
 
@@ -192,8 +193,8 @@ void bmp280GetDataFromI2cBuffer(bmp280_configuration *configuration) {
     configuration->adc_T |= I2cReceiveData[5];
 
 #ifdef BMP280_DEBUG
-    printf("Raw data is %02x, %02x, %02x, temp: %02x, %02x, %02x\r\n", I2cReceiveData[0], I2cReceiveData[1], I2cReceiveData[2],I2cReceiveData[3], I2cReceiveData[4],I2cReceiveData[5]);
-    printf("Actual: %08lx, %08lx\r\n", configuration->adc_T, configuration->adc_P);
+    printf_P(PSTR("Raw data is %02x, %02x, %02x, temp: %02x, %02x, %02x\r\n"), I2cReceiveData[0], I2cReceiveData[1], I2cReceiveData[2],I2cReceiveData[3], I2cReceiveData[4],I2cReceiveData[5]);
+    printf_P(PSTR("Actual: %08lx, %08lx\r\n"), configuration->adc_T, configuration->adc_P);
 #endif
 
     configuration->timestamp = micros();
@@ -211,12 +212,32 @@ void bmp280GetData(pressureEvent *myEvent, bmp280_configuration *configuration) 
 #ifdef BMP280_DEBUG
     //printf("Raw data is %x %x %x %x %x %x\r\n", configuration->pressure_data[0], configuration->pressure_data[1], configuration->pressure_data[2], configuration->temperature_data[0], configuration->temperature_data[1], configuration->temperature_data[2]);
 #endif
-    s64 adc_P_temp = configuration->adc_P >> 4;
-    s64 adc_T_temp = configuration->adc_T >> 4;
+    s32 adc_P_temp = configuration->adc_P >> 4;
+    s32 adc_T_temp = configuration->adc_T >> 4;
 
     myEvent->timestamp = configuration->timestamp;
     CRITICAL_SECTION_END;
 
-    myEvent->temperature = bmp280_compensate_T_int32(adc_T_temp, configuration) / 100.0;
-    myEvent->pressure = bmp280_compensate_P_int64(adc_P_temp, configuration) / 25600.0;
+    myEvent->temperature = bmp280_compensate_T_int32(adc_T_temp, configuration);
+    myEvent->pressure = bmp280_compensate_P_int64(adc_P_temp, configuration);
+}
+
+void calculateAirspeed(pressureEvent *pitotPressure, pressureEvent *staticPressure, airspeed_struct *airspeed) {
+    //Since the event comes from two different sensors, its timestamp shall be the average of those
+    u64 timestamp = (pitotPressure->timestamp + staticPressure->timestamp) / 2;
+
+    if (airspeed->timestamp == timestamp) {
+        return;
+    }
+
+    //Calculated using the ideal gas law https://en.wikipedia.org/wiki/Density_of_air
+    //We use the pitot tube's temperature since the static sensor actually gets quite warm in use
+    float rho = (staticPressure->pressure / 256.0) / (287.058 * ((pitotPressure->temperature / 100.0) + 273.15));
+
+    //equtation from https://en.wikipedia.org/wiki/Pitot_tube, adapted a little
+    //We would have to diveide pred
+    u32 v = 100 * sqrt(2 * ((s64) pitotPressure->pressure - (s64) staticPressure->pressure) / (256 * rho));
+
+    airspeed->timestamp = timestamp;
+    airspeed->speed = v;
 }

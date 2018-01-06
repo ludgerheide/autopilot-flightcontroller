@@ -113,14 +113,14 @@ void xBeeSendPayload(char *payload, uint8_t bufferSize, bool shouldAck, uint8_t 
     uint8_t result = uartSendBuffer(XBEE_UART, xBeeTxBuffer, bufferSize + 18);
 
 #ifdef COMMS_DEBUG
-    printf("uart: %i, size: %i, result: %i\r\n", XBEE_UART, bufferSize + 18, result);
+    printf_P(PSTR("uart: %i, size: %i, result: %i\r\n"), XBEE_UART, bufferSize + 18, result);
 #endif
 
     if (result != FALSE) {
         return;
     } else {
 #ifdef COMMS_DEBUG
-        printf("Error Sending!\r\n");
+        printf_P(PSTR("Error Sending!\r\n"));
 #endif
     }
 }
@@ -155,19 +155,19 @@ void xBeeByteReceiver(unsigned char c) {
         xBeeRxBuffer[received_index - 3] = c;
     } else if (received_index == received_size + 3) {
 #ifdef COMMS_DEBUG
-        printf("RX complete\r\n!");
+        printf_P(PSTR("RX complete\r\n!"));
 #endif
         uint8_t checksum = xBeeGenerateChecksum(xBeeRxBuffer, received_size);
         if (checksum == c) {
 #ifdef COMMS_DEBUG
-            printf("Message complete and checked!\r\n!");
+            printf_P(PSTR("Message complete and checked!\r\n!"));
 #endif
 
             //We have recieved a correnct message, set the "Ready" flag
             xBeeNewMessageReady = true;
         } else {
 #ifdef COMMS_DEBUG
-            printf("Checksum failed!\r\n");
+            printf_P(PSTR("Checksum failed!\r\n"));
 #endif
 
             received_size = 0;
@@ -175,11 +175,11 @@ void xBeeByteReceiver(unsigned char c) {
         }
     } else {
 #ifdef COMMS_DEBUG
-        printf("Buffer overflow @%i!\r\n", __LINE__);
+        printf_P(PSTR("Buffer overflow @%i!\r\n"), __LINE__);
         for(u08 i = 0; i < received_size; i++) {
-            printf("%02x ", xBeeRxBuffer[i]);
+            printf_P(PSTR("%02x "), xBeeRxBuffer[i]);
         }
-        printf("Size: %u\r\n", received_size);
+        printf_P(PSTR("Size: %u\r\n"), received_size);
 #endif
 
         received_size = 0;
@@ -198,7 +198,7 @@ void xBeeHandleMessage(void) {
     for(u08 i = 0; i < received_size; i++) {
         printf("%02x ", xBeeRxBuffer[i]);
     }
-    printf("Size: %u\r\n", received_size);
+    printf_P(PSTR("Size: %u\r\n"), received_size);
 #endif
 
     switch (xBeeRxBuffer[0]) {
@@ -218,7 +218,7 @@ void xBeeHandleMessage(void) {
 
         default:
 #ifdef COMMS_DEBUG
-            printf("Other packet type received!");
+            printf_P(PSTR("Other packet type received!"));
 #endif
             break;
     }

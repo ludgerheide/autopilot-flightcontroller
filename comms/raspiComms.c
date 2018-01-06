@@ -65,11 +65,11 @@ void raspiByteReceiver(u08 c) {
         return;
     } else {
 #ifdef COMMS_DEBUG
-        printf("Buffer overflow @%i!\r\n", __LINE__);
+        printf_P(PSTR("Buffer overflow @%i!\r\n"), __LINE__);
         for(u08 i = 0; i < msgSize; i++) {
             printf("%02x ", raspiRxBuffer[i]);
         }
-        printf("Size: %u\r\n", msgSize);
+        printf_P(PSTR("Size: %u\r\n"), msgSize);
 #endif
         received_index = 0;
         return;
@@ -79,11 +79,11 @@ void raspiByteReceiver(u08 c) {
 //Called when a complete message os in the buffer
 void raspiHandleMessage(void) {
 #ifdef COMMS_DEBUG
-    printf("Processing @%i!\r\n", __LINE__);
+    printf_P(PSTR("Processing @%i!\r\n"), __LINE__);
     for(u08 i = 0; i < msgSize; i++) {
         printf("%02x ", raspiRxBuffer[i]);
     }
-    printf("Size: %u\r\n", msgSize);
+    printf_P(PSTR("Size: %u\r\n"), msgSize);
 #endif
 
     commsProcessMessage((char *) raspiRxBuffer, msgSize);

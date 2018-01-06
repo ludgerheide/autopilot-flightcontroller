@@ -24,17 +24,11 @@ void commsInit(void);
 
 void commsProcessMessage(char *message, u08 size);
 
-//Function to convert degrees to a fixed-point 16 byte integer
-s16 degreesToInt(float degrees);
-
-//Converts a fixed-point interger to a float
-float intToDegrees(s16 fixedPoint);
-
 //Telemetry goes out over the radio and is a small packet with posoition, velocity and attitude
-void commsCheckAndSendTelemetry(void);
+int commsCheckAndSendTelemetry(void);
 
 //Logging goes out over the serial port and contains *a lot* of data
-void commsCheckAndSendLogging(void);
+int commsCheckAndSendLogging(void);
 
 //Called when a status is received
 void txStatusHandler(uint8_t frameID, __attribute__ ((unused)) uint8_t retryCount,

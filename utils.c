@@ -69,16 +69,17 @@ void readSlpFromEEPROM(void) {
 
     if (slpFromRom <= 1100 && slpFromRom >= 850) {
         //Our value is within the allowed bounds
-        seaLevelPressure = slpFromRom;
+        mySeaLevelPressure.slp = slpFromRom;
+        mySeaLevelPressure.timestamp = 1;
     } else {
-        seaLevelPressure = 1013; //Stanard pressure otherwise
+        mySeaLevelPressure.slp = 1013; //Stanard pressure otherwise
     }
 }
 
 void writeSlpToEEPROM(void) {
     eeprom_busy_wait();
     CRITICAL_SECTION_START;
-    eeprom_update_float(EEPROM_SLP_ADDRESS, seaLevelPressure);
+    eeprom_update_float(EEPROM_SLP_ADDRESS, mySeaLevelPressure.slp);
     CRITICAL_SECTION_END;
 }
 
@@ -88,7 +89,7 @@ void readHomeBaseFromEEPROM(void) {
     waypoint tmpHomeBase = {.timestamp = 1,
             .latitude = 91,
             .longitude = 181,
-            .altitude = -500};
+            .altitude = -50000};
 
     //Load the home base from EEPROM
     eeprom_busy_wait();
@@ -99,8 +100,8 @@ void readHomeBaseFromEEPROM(void) {
     //Verify the coordinates
     if (isnan(tmpHomeBase.latitude) || tmpHomeBase.latitude > 90 || tmpHomeBase.latitude < -90 ||
         isnan(tmpHomeBase.longitude) || tmpHomeBase.longitude > 180 || tmpHomeBase.longitude < -180 ||
-        isnan(tmpHomeBase.altitude) || tmpHomeBase.altitude < -418 || tmpHomeBase.altitude > 10000) {
-        //Note: -418 is the lowest surface point in the world
+        isnan(tmpHomeBase.altitude) || tmpHomeBase.altitude < -41800 || tmpHomeBase.altitude > 1000000) {
+        //Note: -418 meters is the lowest surface point in the world
         homeBase = defaultHomeBase;
     } else {
         tmpHomeBase.timestamp = 1;

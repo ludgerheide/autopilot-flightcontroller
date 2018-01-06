@@ -121,8 +121,8 @@ void batteryInit(void) {
     CRITICAL_SECTION_END;
 }
 
-//Converts the raw voltage to a real value
-static float convertVoltage(void) {
+//Converts the raw voltage to a real value (in mV)
+static u16 convertVoltage(void) {
     CRITICAL_SECTION_START;
     float voltage = batteryVoltage;
     CRITICAL_SECTION_END;
@@ -132,20 +132,20 @@ static float convertVoltage(void) {
     //For 2.56V reference
     //const float conversionFactor = 19.626666666 / 1023;
     //For 5V reference
-    const float conversionFactor = 38.33333333 / (1023);
+    const float conversionFactor = 1000 * (38.33333333 / (1023));
 
     return voltage * conversionFactor;
 }
 
-//Converts the raw current to a real value
-static float convertCurrent(void) {
+//Converts the raw current to a real value (in mA)
+static u16 convertCurrent(void) {
     CRITICAL_SECTION_START;
     float current = batteryCurrent;
     CRITICAL_SECTION_END;
     //Subtract to get to the ± 511.5 range
     current -= 511.5;
 
-    const float conversionFactor = 50.0 / (1023);
+    const float conversionFactor = 1000 * (50.0 / (1023));
 
     return current * conversionFactor;
 }
@@ -154,7 +154,7 @@ static float convertCurrent(void) {
 void batteryGetData(batteryEvent *event) {
     event->voltage = convertVoltage();
     event->current = convertCurrent();
-    event->timestamp = micros();
+    event->timestamp = micros64();
 }
 
 //ISR for the ADC interrupt. Save (if applicable), advance the mode and start a new measurement

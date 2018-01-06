@@ -10,10 +10,11 @@
 #define flightController_h
 
 #include <stdio.h>
+#include "../protobuf/communicationProtocol.pb.h"
 
 void flightControllerInit(void);
 
-flightMode checkSensorsAndSetFlightMode(void);
+DroneMessage_FlightMode checkSensorsAndSetFlightMode(void);
 
 void updateFlightControls(void);
 

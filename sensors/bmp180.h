@@ -61,9 +61,10 @@ typedef enum {
 /*=========================================================================*/
 
 typedef struct {
-    float temperature; //Celsius?
-    float pressure;  //hPa?
-    u32 timestamp; //microseconds
+    u64 timestamp; //microseconds
+
+    s32 temperature; //Celsius * 100
+    u32 pressure;  //Pa * 256
 } pressureEvent;
 
 typedef struct tempPressRawData {
@@ -72,8 +73,15 @@ typedef struct tempPressRawData {
     u08 presshi;
     u08 presslo;
     u08 pressxlo;
-    u32 timestamp;
+    u64 timestamp;
 } tempPressRawData;
+
+typedef struct altitudeData {
+    u64 timestamp; //Microseconds
+
+    s32 altitude; //centimeters (relative to barometer calibration)
+    s32 rate_of_climb; //cm/s
+} altitudeData;
 
 typedef enum {
     BMP180_IDLE,
@@ -85,10 +93,17 @@ typedef enum {
     BMP180_PRESSURE_RECEIVING,
 } bmp180State;
 
+typedef struct seaLevelPressure {
+    u64 timestamp;
+    float slp;
+} seaLevelPressure_struct;
+
 //Variables
 extern bmp180State myBmp180State;
 extern volatile tempPressRawData myBmp180RawData;
 extern u32 bmp180LastStateChange;
+
+seaLevelPressure_struct mySeaLevelPressure;
 
 //Initialize the BMP
 //Returns true if the initializationw as successfull, false otherwise
@@ -115,7 +130,7 @@ void bmp180GetTempDataFromI2cBuffer(void);
 //Gets the altitude from the bmp
 void bmp180GetData(pressureEvent *myEvent);
 
-//Convert a pressure reading to altitude
-float pressureToAltitude(float atmosphericPressure, float theSeaLevelPressure);
+//Updates the altitude struct
+void updateAltitudeData(pressureEvent *staticPressure, altitudeData *myAltitudeData);
 
 #endif /* bmp180_h */
