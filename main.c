@@ -73,5 +73,9 @@ int main(void) {
         //Send telemetry
         commsCheckAndSendTelemetry();
         commsCheckAndSendLogging();
+        //printf("Static: %.3f hPa, %.3f °C\r\n", bmp180staticPressure.pressure/25600.0, bmp180staticPressure.temperature/100.0);
+        //printf("Pitot: %.3f hPa, %.3f °C\r\n", bmp280pitotPressure.pressure/25600.0, bmp280pitotPressure.temperature/100.0);
+        //printf("Altitude: %.3f m, Airspeed: %.3f m/s\r\n", myAltitudeData.altitude/100.0, myAirspeed.speed/100.0);
+        //_delay_ms(100);
     }
 }

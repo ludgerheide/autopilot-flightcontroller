@@ -177,5 +177,5 @@ add_dependencies(autopilot createProtobuf)
 
 #---------------- Library Options ----------------
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-u,vfprintf")
-#target_link_libraries(autopilot-${AVR_MCU}.elf printf_min)
-target_link_libraries(autopilot-${AVR_MCU}.elf printf_flt m)
+target_link_libraries(autopilot-${AVR_MCU}.elf printf_min)
+#target_link_libraries(autopilot-${AVR_MCU}.elf printf_flt m)
