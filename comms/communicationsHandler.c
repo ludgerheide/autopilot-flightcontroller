@@ -42,8 +42,8 @@ static const u16 telemetryDelay = 250; //The delay between each telemetry messag
 // b) send thtough the serial (logging port)
 //TODO Actually, we should be able to store those values as u64 because we don't care about the rollovers
 //TODO And then compare (u32) timestamp to (u32) telPosTime...
-static u64 telAirSpeedTime, telPosTime, telAttitudeTime, telBatteryTime;
-static u64 logGpsSpeedTime, logAirSpeedTime, logPosTime, logAttitudeTime, logStaticPressureTime, logPitotPressureTime, logRawGyroTime, logRawMagTime, logRawAccelTime, logBatteryTime, logOutCommandSetTime, logCommandUpdateTime, logHomeBaseTime, logSlpTime;
+static u64 telAirSpeedTime, telPosTime, telAltTime, telAttitudeTime, telBatteryTime;
+static u64 logGpsSpeedTime, logAirSpeedTime, logPosTime, logAltTime, logAttitudeTime, logStaticPressureTime, logPitotPressureTime, logRawGyroTime, logRawMagTime, logRawAccelTime, logBatteryTime, logOutCommandSetTime, logCommandUpdateTime, logHomeBaseTime, logSlpTime;
 static DroneMessage outgoingMsg, incomingMsg; //Allocate it here so it gets added to the compile-time memory usage stat (stack vs heap etc).
 
 //Function n that creates a message and puts it into the message buffer
@@ -128,6 +128,29 @@ static u08 createProtobuf(messagePurpose thePurpose, u08 *messageLength) {
             logPosTime = GpsInfo.PosLLA.timestamp;
         } else {
             telPosTime = GpsInfo.PosLLA.timestamp;
+        }
+    }
+
+    //Altitude for both, extened if we're logging
+    if ((thePurpose == logging && myAltitudeData.timestamp - logAltTime) ||
+        (thePurpose == telemetry && myAltitudeData.timestamp - telAltTime)) {
+        outgoingMsg.has_current_altitude = true;
+
+        //For both, add altitude
+        outgoingMsg.current_altitude.altitude = myAltitudeData.altitude;
+
+        //For logging, add timestamp and rate of climb
+        if (thePurpose == logging) {
+            outgoingMsg.current_altitude.has_timestamp = true;
+            outgoingMsg.current_altitude.timestamp = myAltitudeData.timestamp;
+            outgoingMsg.current_altitude.has_rate_of_climb = true;
+            outgoingMsg.current_altitude.rate_of_climb = myAltitudeData.rate_of_climb;
+        }
+        //Now update the time
+        if (thePurpose == logging) {
+            logAltTime = myAltitudeData.timestamp;
+        } else {
+            telAltTime = myAltitudeData.timestamp;
         }
     }
 
