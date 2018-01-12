@@ -25,10 +25,10 @@ void commsInit(void);
 void commsProcessMessage(char *message, u08 size);
 
 //Telemetry goes out over the radio and is a small packet with posoition, velocity and attitude
-int commsCheckAndSendTelemetry(void);
+s08 commsCheckAndSendTelemetry(void);
 
 //Logging goes out over the serial port and contains *a lot* of data
-int commsCheckAndSendLogging(void);
+s08 commsCheckAndSendLogging(void);
 
 //Called when a status is received
 void txStatusHandler(uint8_t frameID, __attribute__ ((unused)) uint8_t retryCount,

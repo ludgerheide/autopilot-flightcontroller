@@ -410,7 +410,7 @@ void commsProcessMessage(char *message, u08 size) {
 
 //Check if the time has come to send a new message, then send it
 //Return 0 if nothing was done
-int commsCheckAndSendTelemetry(void) {
+s08 commsCheckAndSendTelemetry(void) {
     u32 now = millis();
     u08 telemetryLength = 0;
 
@@ -436,7 +436,7 @@ int commsCheckAndSendTelemetry(void) {
 
 //Check if the time has come to send a new message, then send it
 //Return 0 if nothing was done
-int commsCheckAndSendLogging(void) {
+s08 commsCheckAndSendLogging(void) {
     u08 loggingLength = 0;
 
     //Check if the serial buffer is empty
