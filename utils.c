@@ -18,9 +18,9 @@
 #define CRITICAL_SECTION_END    SREG = _sreg
 #endif
 
-//EEPROM layout
 #define EEPROM_SLP_ADDRESS 0x00 //Stores a float, next address 0x04
-#define EEPROM_HOMEBASE_ADDRESS 0x04
+#define EEPROM_PRESSURE_COMPENSATION_ADDRESS (EEPROM_SLP_ADDRESS+sizeof(float)) //Stores an s32
+#define EEPROM_HOMEBASE_ADDRESS (EEPROM_PRESSURE_COMPENSATION_ADDRESS+sizeof(s32))
 
 //Default home base if the one we have is corrupoted or zero
 static const waypoint defaultHomeBase = {.timestamp = 1,
@@ -115,6 +115,21 @@ void writeHomeBaseToEEPROM(void) {
     eeprom_busy_wait();
     CRITICAL_SECTION_START;
     eeprom_update_block(&homeBase, (void *) EEPROM_HOMEBASE_ADDRESS, sizeof(waypoint));
+    CRITICAL_SECTION_END;
+}
+
+s32 readPressureCompensationFromEEPROM(void) {
+    eeprom_busy_wait();
+    CRITICAL_SECTION_START;
+    s32 retVal = eeprom_read_dword((u32 *) EEPROM_PRESSURE_COMPENSATION_ADDRESS);
+    CRITICAL_SECTION_END;
+    return retVal;
+}
+
+void writePressureCompensationToEEPROM(s32 value) {
+    eeprom_busy_wait();
+    CRITICAL_SECTION_START;
+    eeprom_update_dword((u32 *) EEPROM_PRESSURE_COMPENSATION_ADDRESS, (u32) value);
     CRITICAL_SECTION_END;
 }
 

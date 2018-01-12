@@ -5,6 +5,7 @@
 #include "bmp280.h"
 #include "../avrlib/i2c.h"
 #include "../avrlib/timer.h"
+#include "../utils.h"
 
 #include <assert.h>
 #include <avr/io.h>
@@ -18,6 +19,9 @@
 #ifndef _unused
 #define _unused(x) ((void)x)
 #endif
+
+//Stores the pressure difference (static - pitot) for zero airspeed
+static s32 pitotPressureDifference;
 
 static u08 bmp280Read8(u08 reg, bmp280_configuration *configuration) {
     assert(configuration->address == BMP280_ADDRESS1 || configuration->address == BMP280_ADDRESS2);
@@ -133,6 +137,7 @@ BOOL bmp280Init(bmp280_configuration *configuration) {
     if (deviceId != BMP280_CHIPID) {
         return FALSE;
     }
+    pitotPressureDifference = readPressureCompensationFromEEPROM();
 
     readCoefficients(configuration);
 
@@ -222,6 +227,50 @@ void bmp280GetData(pressureEvent *myEvent, bmp280_configuration *configuration) 
     myEvent->pressure = bmp280_compensate_P_int64(adc_P_temp, configuration);
 }
 
+// Measures the pressure compensation
+// ALERT: Blocks for ~500ms, do not use inflight
+void calibratePressureCompensation(void) {
+    const u08 samplingCount = 100;
+    u32 pitotSamples[samplingCount];
+    u32 staticSamples[samplingCount];
+
+    pressureEvent pitotEvent, staticEvent;
+    s08 pitotCount = -1; //Disregard the first one sample, because it can be strange after a reset
+    s08 staticCount = -1;
+    do {
+        u64 lastPitot = pitotEvent.timestamp;
+        u64 lastStatic = staticEvent.timestamp;
+
+        bmp280GetData(&pitotEvent, &bmp280_0x76);
+        bmp180GetData(&staticEvent);
+
+        if (pitotEvent.timestamp != lastPitot && pitotCount < samplingCount) {
+            pitotSamples[pitotCount] = pitotEvent.pressure;
+            pitotCount++;
+        }
+
+        if (staticEvent.timestamp != lastStatic && staticCount < samplingCount) {
+            staticSamples[staticCount] = staticEvent.pressure;
+            staticCount++;
+        }
+    } while (pitotCount < samplingCount || staticCount < samplingCount);
+
+    //Calculate the average of each and the difference
+    u64 pitotAvg = 0;
+    u64 staticAvg = 0;
+    for (u08 i = 0; i < samplingCount; i++) {
+        pitotAvg += pitotSamples[i];
+        staticAvg += staticSamples[i];
+    }
+
+    //Average, difference
+    pitotAvg /= samplingCount;
+    staticAvg /= samplingCount;
+
+    pitotPressureDifference = (s32) (staticAvg - pitotAvg);
+    writePressureCompensationToEEPROM(pitotPressureDifference);
+}
+
 void calculateAirspeed(pressureEvent *pitotPressure, pressureEvent *staticPressure, airspeed_struct *airspeed) {
     //Since the event comes from two different sensors, its timestamp shall be the average of those
     u64 timestamp = (pitotPressure->timestamp + staticPressure->timestamp) / 2;
@@ -236,7 +285,9 @@ void calculateAirspeed(pressureEvent *pitotPressure, pressureEvent *staticPressu
 
     //equtation from https://en.wikipedia.org/wiki/Pitot_tube, adapted a little
     //We would have to diveide pred
-    u32 v = 100 * sqrt(2 * ((s64) pitotPressure->pressure - (s64) staticPressure->pressure) / (256 * rho));
+    u32 v = 100 *
+            sqrt(2 * (((s64) pitotPressure->pressure + pitotPressureDifference) - (s64) staticPressure->pressure) /
+                 (256 * rho));
 
     airspeed->timestamp = timestamp;
     airspeed->speed = v;

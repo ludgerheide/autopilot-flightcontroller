@@ -140,6 +140,11 @@ void bmp280GetDataFromI2cBuffer(bmp280_configuration *configuration);
 //Gets the altitude from the bmp
 void bmp280GetData(pressureEvent *myEvent, bmp280_configuration *configuration);
 
+// Measures the pressure compensation
+// ALERT: Blocks for ~500ms, do not use inflight
+void calibratePressureCompensation(void);
+
+//Calculates airspeed
 void calculateAirspeed(pressureEvent *pitotPressure, pressureEvent *staticPressure, airspeed_struct *airspeed);
 
 #endif //FLIGHTCONTROLLER_BMP280_H

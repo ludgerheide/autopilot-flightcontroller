@@ -401,6 +401,11 @@ void commsProcessMessage(char *message, u08 size) {
             writeHomeBaseToEEPROM();
         }
     }
+
+    if (incomingMsg.has_do_pressure_compensation) {
+        assert(incomingMsg.do_pressure_compensation == true);
+        calibratePressureCompensation();
+    }
 }
 
 //Check if the time has come to send a new message, then send it
