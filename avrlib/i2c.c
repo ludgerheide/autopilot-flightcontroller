@@ -17,6 +17,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/delay.h>
 
 #include "i2c.h"
 
@@ -64,6 +65,41 @@ void i2cInit(void) {
     defined (__AVR_ATmega1281__) || defined (__AVR_ATmega1284P__) || \
     defined (__AVR_ATmega128RFA1__) || defined(__AVR_ATmega2560__))
 
+    const u16 bitRate = 400;
+
+    //Reset the bus by clocking 9 times and manually setting a stop condition in software
+    //Before enabling the hardware
+    cbi(TWCR, TWEN);
+    //Set clock (PD0) pin as output, low
+    sbi(DDRD, DD0);
+    //and sda with pullup
+    cbi(DDRD, DD1);
+    sbi(PORTD, 1);
+
+    //Toggle the clock nine times
+    for (u08 i = 0; i < 10; i++) {
+        sbi(PORTD, 0);
+        _delay_us(1000 / bitRate);
+        cbi(PORTD, 0);
+        _delay_us(1000 / bitRate);
+    }
+
+    //Then generate a stop condition
+    //drive SDA Low
+    sbi(DDRD, DD1);
+    cbi(PORTD, 1);
+    _delay_us(4 * (1000 / bitRate));
+
+    //Drive SCL high
+    sbi(PORTD, 0);
+    _delay_us(1000 / bitRate);
+
+    //Drive SDA HIGH
+    sbi(PORTD, 1);
+    _delay_us(4 * (1000 / bitRate));
+
+    cbi(DDRD, DD0);
+    cbi(DDRD, DD1);
     sbi(PORTD, 0);    // i2c SCL on ATmega128,64
     sbi(PORTD, 1);    // i2c SDA on ATmega128,64
 #elif (defined (__AVR_ATmega8__) || defined (__AVR_ATmega8A__))
@@ -74,13 +110,13 @@ void i2cInit(void) {
     sbi(PORTC, 1);	// i2c SDA on ATmega163,323,16,32,etc
 #endif
 #endif
-
     // clear SlaveReceive and SlaveTransmit handler to null
     i2cSlaveReceive = 0;
     i2cSlaveTransmit = 0;
     i2cStopHandler = 0;
-    // set i2c bit rate to 100KHz
-    i2cSetBitrate(100);
+    // set i2c bit rate to 400KHz
+    i2cSetBitrate(bitRate);
+
     // enable TWI (two-wire interface)
     sbi(TWCR, TWEN);
     // set state

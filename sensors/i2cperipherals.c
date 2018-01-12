@@ -78,7 +78,7 @@ void IMUinit() {
         cbi(PORTD, PORTD2);
 
         //Attach the DRDY interrupt
-        sbi(EICRA, ISC20); //Writing 1 to ISC20 and ISC21 sets interrupt on rising edge
+        sbi(EICRA, ISC20); //Writing 1 to ISC20 and 1 to ISC21 sets interrupt on rising edge
         sbi(EICRA, ISC21);
 
         //Setting INT2 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
@@ -105,7 +105,7 @@ void IMUinit() {
         cbi(PORTD, PORTD3);
 
         //Attach the DRDY interrupt
-        sbi(EICRA, ISC30); //Writing 1 to ISC30 and ISC31 sets interrupt on rising edge
+        cbi(EICRA, ISC30); //Writing 0 to ISC30 and 1 to ISC31 sets interrupt on falling edge
         sbi(EICRA, ISC31);
 
         //Setting INT3 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
