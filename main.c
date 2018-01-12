@@ -54,28 +54,40 @@ static void updateSensors(void) {
 
 int main(void) {
     initIO();
+    u08 nextTask = 1;
 
     while (1) {
         updateSensors();
 
-        //TODO: Only do one of those per cycle (or so)
-        //Check if we have a new GPS and xbee available
+        //Check if we have a new raspi and xbee available
         if (xBeeNewMessageReady) {
             xBeeHandleMessage();
         }
         if (raspiNewMessageReady) {
             raspiHandleMessage();
         }
-        if (gpsCheck()) {
-            gpsUpdate();
-        }
 
-        //Send telemetry
-        commsCheckAndSendTelemetry();
-        commsCheckAndSendLogging();
-        //printf("Static: %.3f hPa, %.3f °C\r\n", bmp180staticPressure.pressure/25600.0, bmp180staticPressure.temperature/100.0);
-        //printf("Pitot: %.3f hPa, %.3f °C\r\n", bmp280pitotPressure.pressure/25600.0, bmp280pitotPressure.temperature/100.0);
-        //printf("Altitude: %.3f m, Airspeed: %.3f m/s\r\n", myAltitudeData.altitude/100.0, myAirspeed.speed/100.0);
-        //_delay_ms(100);
+        switch (nextTask) {
+            case 1:
+                nextTask = 2;
+                if (gpsCheck()) {
+                    gpsUpdate();
+                    break;
+                }
+
+            case 2:
+                nextTask = 3;
+                if (commsCheckAndSendTelemetry() != 0) { //Nonzero return indicates something was done
+                    break;
+                }
+
+            case 3:
+                nextTask = 1;
+                commsCheckAndSendLogging();
+                break;
+
+            default:
+                break;
+        }
     }
 }
