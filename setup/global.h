@@ -32,6 +32,8 @@
 #include "../sensors/battery.h"
 #include "../sensors/bmp280.h"
 
+#include <avr/wdt.h>
+
 // project/system dependent defines
 
 // CPU clock speed
@@ -42,6 +44,8 @@
 //#define F_CPU        4000000               		// 4MHz processor
 //#define F_CPU        3686400               		// 3.69MHz processor
 #define CYCLES_PER_US ((F_CPU+500000)/1000000)    // cpu cycles per microsecond
+
+#define WDTO_DEFAULT WDTO_30MS
 
 typedef struct {
     u64 timestamp;

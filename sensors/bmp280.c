@@ -8,7 +8,6 @@
 #include "../utils.h"
 
 #include <assert.h>
-#include <avr/io.h>
 #include <math.h>
 
 #ifndef CRITICAL_SECTION_START
@@ -228,8 +227,12 @@ void bmp280GetData(pressureEvent *myEvent, bmp280_configuration *configuration) 
 }
 
 // Measures the pressure compensation
-// ALERT: Blocks for ~500ms, do not use inflight
+// ALERT: Blocks for ~5000ms, do not use inflight
 void calibratePressureCompensation(void) {
+    //Since this takes so long,w e need to change the watchdog timeout
+    wdt_disable();
+    wdt_enable(WDTO_8S);
+
     const u08 samplingCount = 100;
     u32 pitotSamples[samplingCount];
     u32 staticSamples[samplingCount];
@@ -269,6 +272,10 @@ void calibratePressureCompensation(void) {
 
     pitotPressureDifference = (s32) (staticAvg - pitotAvg);
     writePressureCompensationToEEPROM(pitotPressureDifference);
+
+    //reenable the watchdog with the proper timeout;
+    wdt_disable();
+    wdt_enable(WDTO_DEFAULT);
 }
 
 void calculateAirspeed(pressureEvent *pitotPressure, pressureEvent *staticPressure, airspeed_struct *airspeed) {
