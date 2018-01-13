@@ -105,8 +105,8 @@ void IMUinit() {
         cbi(PORTD, PORTD3);
 
         //Attach the DRDY interrupt
-        cbi(EICRA, ISC30); //Writing 0 to ISC30 and 1 to ISC31 sets interrupt on falling edge
-        sbi(EICRA, ISC31);
+        cbi(EICRA, ISC30); //Writing 0 to ISC30 and 0 to ISC31 sets interrupt on a low value
+        cbi(EICRA, ISC31);
 
         //Setting INT3 in EIMSK enables the interrupt (if they are globally enabled (but they are cause i2cinit did that))
         sbi(EIMSK, INT3);
@@ -365,6 +365,7 @@ void customStopHandler(u08 statusReg, u08 deviceaddress) {
                 myMagRawData.zlo = I2cReceiveData[3];
                 myMagRawData.yhi = I2cReceiveData[4];
                 myMagRawData.ylo = I2cReceiveData[5];
+                sbi(EIMSK, INT3);
 
                 //We have not decided what to do on the bus yet, so decide it
                 checkForPendingTransmissionsOrStop();
@@ -582,6 +583,8 @@ ISR(INT3_vect) {
         printf_P(PSTR("I2C busy, just setting flag!\r\n"));
     }
 #endif
+    //Disable this interrupt (it gets re-enabled when we complete the transfer
+    cbi(EIMSK, INT3);
 }
 
 ISR(INT2_vect) {
