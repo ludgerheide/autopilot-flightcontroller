@@ -40,6 +40,9 @@ s32 readPressureCompensationFromEEPROM(void);
 // Writes the pressure compensation used to do proper airspeed calculation
 void writePressureCompensationToEEPROM(s32 value);
 
+//Do a reset of the avr
+void doReset(void) __attribute__ ((noreturn));
+
 //Maps a float from one range to another, making sure it's in bounds
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max);
 

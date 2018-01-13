@@ -46,47 +46,65 @@ static void updateSensors(void) {
     u32 now = micros();
 
     //Get the current sensor events and validate their times, otherwise, reste i2c and exit from the method
-    gyroGetData(&curGyro);
-    if ((u32) curGyro.timestamp < now && now - (u32) curGyro.timestamp > 2 * periodGyro) {
-        IMUinit();
-        return;
+    if (theFlags.gyroEnabled) {
+        gyroGetData(&curGyro);
+        if ((u32) curGyro.timestamp < now && now - (u32) curGyro.timestamp > 2 * periodGyro) {
+            doReset();
+        }
     }
 
-    accelGetData(&curAccel);
-    if ((u32) curAccel.timestamp < now && now - (u32) curAccel.timestamp > 2 * periodAccel) {
-        IMUinit();
-        return;
+    if (theFlags.accelEnabled) {
+        accelGetData(&curAccel);
+        if ((u32) curAccel.timestamp < now && now - (u32) curAccel.timestamp > 2 * periodAccel) {
+            doReset();
+        }
     }
 
-    magGetData(&uncompensatedMag);
-    if ((u32) uncompensatedMag.timestamp < now && now - (u32) uncompensatedMag.timestamp > 4 *
-                                                                                           periodMag) { //4X Because the magnetometer likes to skip a sample every now and then and I don't really care about that
-        IMUinit();
-        return;
+    if (theFlags.magEnabled) {
+        magGetData(&uncompensatedMag);
+        if ((u32) uncompensatedMag.timestamp < now && now - (u32) uncompensatedMag.timestamp > 4 *
+                                                                                               periodMag) {
+            //4X Because the magnetometer likes to skip a sample every now and then and I don't really care about that
+            doReset();
+        }
+
+        magCompensate(&uncompensatedMag, &curMag);
     }
 
-    magCompensate(&uncompensatedMag, &curMag);
-
-    //Update the madgwick algorithm
-    MadgwickAHRSupdate(micros(), curGyro.x, curGyro.y, curGyro.z, curAccel.x, curAccel.y, curAccel.z, curMag.x,
-                       curMag.y, curMag.z);
-    getYawPitchRollDegrees(&currentAttitude.courseMagnetic, &currentAttitude.pitch, &currentAttitude.roll);
-    currentAttitude.timestamp = micros64();
+    if (theFlags.accelEnabled && theFlags.gyroEnabled) {
+        //Update the madgwick algorithm
+        if (theFlags.magEnabled) {
+            MadgwickAHRSupdate(micros(), curGyro.x, curGyro.y, curGyro.z, curAccel.x, curAccel.y, curAccel.z, curMag.x,
+                               curMag.y, curMag.z);
+        } else {
+            MadgwickAHRSupdateIMU(micros(), curGyro.x, curGyro.y, curGyro.z, curAccel.x, curAccel.y, curAccel.z);
+        }
+        getYawPitchRollDegrees(&currentAttitude.courseMagnetic, &currentAttitude.pitch, &currentAttitude.roll);
+        currentAttitude.timestamp = micros64();
+    }
 
     //Since the madgwick algorithm took a while, update our current time
     now = micros();
 
-    bmp180GetData(&bmp180staticPressure);
-    if ((u32) bmp180staticPressure.timestamp < now && now - (u32) bmp180staticPressure.timestamp > 2 * periodStatic) {
-        IMUinit();
+    if (theFlags.bmp180Enabled) {
+        bmp180GetData(&bmp180staticPressure);
+        if ((u32) bmp180staticPressure.timestamp < now &&
+            now - (u32) bmp180staticPressure.timestamp > 2 * periodStatic) {
+            doReset();
+        }
+        updateAltitudeData(&bmp180staticPressure, &myAltitudeData);
     }
-    updateAltitudeData(&bmp180staticPressure, &myAltitudeData);
 
-    bmp280GetData(&bmp280pitotPressure, &bmp280_0x76);
-    if ((u32) bmp280pitotPressure.timestamp < now && now - (u32) bmp280pitotPressure.timestamp > 2 * periodPitot) {
-        IMUinit();
+    if (theFlags.bmp280Enabled) {
+        bmp280GetData(&bmp280pitotPressure, &bmp280_0x76);
+        if ((u32) bmp280pitotPressure.timestamp < now && now - (u32) bmp280pitotPressure.timestamp > 2 * periodPitot) {
+            doReset();
+        }
     }
-    calculateAirspeed(&bmp280pitotPressure, &bmp180staticPressure, &myAirspeed);
+
+    if (theFlags.bmp180Enabled && theFlags.bmp280Enabled) {
+        calculateAirspeed(&bmp280pitotPressure, &bmp180staticPressure, &myAirspeed);
+    }
 
     batteryGetData(&curBattery);
 }
