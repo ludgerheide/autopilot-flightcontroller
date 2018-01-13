@@ -9,7 +9,6 @@
 #include "accelMag.h"
 #include "../avrlib/i2c.h"
 #include <assert.h>
-#include <avr/io.h>
 
 #ifndef _unused
 #define _unused(x) ((void)x)
@@ -183,9 +182,9 @@ void magGetData(magEvent *myEvent) {
     myEvent->timestamp = myMagRawData.timestamp;
     CRITICAL_SECTION_END;
 
-    static float lsm303Mag_Gauss_LSB_XY = 1100.0F;  // Varies with gain
-    static float lsm303Mag_Gauss_LSB_Z = 980.0F;   // Varies with gain
-    static u08 gauss_to_microtesla = 100;
+    const float lsm303Mag_Gauss_LSB_XY = 1100.0F;  // Varies with gain
+    const float lsm303Mag_Gauss_LSB_Z = 980.0F;   // Varies with gain
+    const u08 gauss_to_microtesla = 100;
 
     myEvent->x = rawX / lsm303Mag_Gauss_LSB_XY * gauss_to_microtesla;
     myEvent->y = rawY / lsm303Mag_Gauss_LSB_XY * gauss_to_microtesla;
