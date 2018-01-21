@@ -24,7 +24,7 @@ cmake_minimum_required(VERSION 2.8)
 # tools to be used for programming the AVR
 ##################################################################################
 set(SSH_COMMAND ssh)
-set(SSH_HOST planedevpi.local)
+set(SSH_HOST planepi.local)
 set(AVR_UPLOADTOOL avrdude)
 set(AVR_PROGRAMMER linuxspi)
 set(AVR_UPLOADTOOL_PORT /dev/spidev0.1)
