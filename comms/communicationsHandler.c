@@ -17,7 +17,7 @@
 #include "../avrlib/uart4.h"
 #include "../avrlib/timer.h"
 #include <assert.h>
-#include <avr/eeprom.h>
+#include <avr/pgmspace.h>
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START    unsigned char _sreg = SREG; cli()
@@ -29,7 +29,7 @@ typedef enum {
     logging
 } messagePurpose;
 
-static char messageBuffer[255];
+static char messageBuffer[512];
 
 //This holds the ID and time of the last transmission. We use it to refreain from sending until the last one has gone through
 //As well as limiting the telemetry frequency
@@ -47,7 +47,7 @@ static u64 logGpsSpeedTime, logAirSpeedTime, logPosTime, logAltTime, logAttitude
 static DroneMessage outgoingMsg, incomingMsg; //Allocate it here so it gets added to the compile-time memory usage stat (stack vs heap etc).
 
 //Function n that creates a message and puts it into the message buffer
-static u08 createProtobuf(messagePurpose thePurpose, u08 *messageLength) {
+static u08 createProtobuf(messagePurpose thePurpose, u16 *messageLength) {
     assert(thePurpose == logging || thePurpose == telemetry);
 
     //Logging gets everything we have, telemtry gets less
@@ -412,7 +412,7 @@ void commsProcessMessage(char *message, u08 size) {
 //Return 0 if nothing was done
 s08 commsCheckAndSendTelemetry(void) {
     u32 now = millis();
-    u08 telemetryLength = 0;
+    u16 telemetryLength = 0;
 
     //Check if the serial buffer is empty, we should send a new msg
     //and the last transmission has been acked (disreagars the ack check if more than one second has passed since the last transmission
@@ -437,7 +437,7 @@ s08 commsCheckAndSendTelemetry(void) {
 //Check if the time has come to send a new message, then send it
 //Return 0 if nothing was done
 s08 commsCheckAndSendLogging(void) {
-    u08 loggingLength = 0;
+    u16 loggingLength = 0;
 
     //Check if the serial buffer is empty
     if (uartReadyTx[RASPI_UART]) {
@@ -448,18 +448,17 @@ s08 commsCheckAndSendLogging(void) {
 #endif
             return -1;
         }
-
         //If we get here creating the protobuf succeeded. Put the magic number in the buffer first, then the length, then the message
         uartAddToTxBuffer(RASPI_UART, 's');
         uartAddToTxBuffer(RASPI_UART, 't');
         uartAddToTxBuffer(RASPI_UART, 'a');
         uartAddToTxBuffer(RASPI_UART, 'r');
         uartAddToTxBuffer(RASPI_UART, 't');
-        uartAddToTxBuffer(RASPI_UART, loggingLength);
-
+        uartAddToTxBuffer(RASPI_UART, (u08) (loggingLength >> 8)); //MSB
+        uartAddToTxBuffer(RASPI_UART, (u08) loggingLength); //LSB
         u08 checksum = 0;
         //Add the data and add a checksum
-        for (u08 i = 0; i < loggingLength; i++) {
+        for (u16 i = 0; i < loggingLength; i++) {
             uartAddToTxBuffer(RASPI_UART, messageBuffer[i]);
             checksum += messageBuffer[i];
         }

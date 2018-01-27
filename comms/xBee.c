@@ -8,9 +8,9 @@
 
 #include "xBee.h"
 #include "../avrlib/uart4.h"
-#include "../setup/pinSetup.h"
 #include "communicationsHandler.h"
 #include <assert.h>
+#include <avr/pgmspace.h>
 
 #define TX_BUFFER_SIZE 128
 #define RX_BUFFER_SIZE 128 //TODO: identify min size

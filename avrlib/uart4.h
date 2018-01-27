@@ -62,7 +62,9 @@
 #define UART4_H
 
 #include "../setup/global.h"
+#include "../setup/pinSetup.h"
 #include "buffer.h"
+
 
 //! Default uart baud rate.
 /// This is the default speed after a uartInit() command,
@@ -76,6 +78,7 @@
 // buffer memory allocation defines
 // buffer sizes
 #ifndef UART0_TX_BUFFER_SIZE
+#error
 #define UART0_TX_BUFFER_SIZE        0x00FF    ///< number of bytes for uart0 transmit buffer
 #endif
 #ifndef UART0_RX_BUFFER_SIZE

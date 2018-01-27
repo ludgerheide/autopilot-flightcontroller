@@ -6,10 +6,10 @@
 //  Copyright © 2016 Ludger Heide. All rights reserved.
 //
 
+#include <avr/pgmspace.h>
 #include "raspiComms.h"
 #include "communicationsHandler.h"
 #include "../avrlib/uart4.h"
-#include "../setup/pinSetup.h"
 
 #define RX_BUFFER_SIZE 128 //TODO: identify min size
 static char raspiRxBuffer[RX_BUFFER_SIZE];

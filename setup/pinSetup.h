@@ -13,6 +13,7 @@
 #define XBEE_UART 3
 #define GPS_UART 2
 #define RASPI_UART 0
+#define UART0_TX_BUFFER_SIZE (512+7)
 
 //The Servo numbers
 #define SERVO1_PORT PORTB
