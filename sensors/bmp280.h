@@ -117,7 +117,7 @@ typedef struct {
     u08 measurement_time;
     volatile s32 adc_P;
     volatile s32 adc_T;
-    volatile u32 timestamp;
+    volatile u64 timestamp;
 } bmp280_configuration;
 
 bmp280_configuration bmp280_0x76;

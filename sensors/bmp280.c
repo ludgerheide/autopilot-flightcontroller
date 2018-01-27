@@ -201,7 +201,7 @@ void bmp280GetDataFromI2cBuffer(bmp280_configuration *configuration) {
     printf_P(PSTR("Actual: %08lx, %08lx\r\n"), configuration->adc_T, configuration->adc_P);
 #endif
 
-    configuration->timestamp = micros();
+    configuration->timestamp = micros64();
 }
 
 //Gets the altitude from the bmp
