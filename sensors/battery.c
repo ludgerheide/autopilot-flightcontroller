@@ -77,7 +77,7 @@ static volatile u16 batteryVoltage;
 
 //values for the low pass filter
 static volatile u32 sumVoltage, sumCurrent;
-const u16 alpha = 9; //thsi is a bitshoft, 8 corresponds to a multiplication by 64
+const u16 alpha = 4; //thsi is a bitshoft, 8 corresponds to a multiplication by 64
 
 // configure A2D converter clock division (prescaling)
 static void a2dSetPrescaler(unsigned char prescale) {
