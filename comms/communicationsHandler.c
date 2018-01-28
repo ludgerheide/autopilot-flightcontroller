@@ -17,7 +17,6 @@
 #include "../avrlib/uart4.h"
 #include "../avrlib/timer.h"
 #include <assert.h>
-#include <avr/pgmspace.h>
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START    unsigned char _sreg = SREG; cli()
@@ -367,6 +366,7 @@ void commsProcessMessage(char *message, u08 size) {
         printf_P(PSTR("Protobuf: Have inputCommand!\r\n"));
 #endif
         commandUpdate = incomingMsg.input_command;
+        commandUpdate.has_timestamp = true;
         commandUpdate.timestamp = now;
     }
 
