@@ -9,7 +9,6 @@
 #include "../avrlib/uart4.h"
 
 #include "gps.h"
-#include "../setup/pinSetup.h"
 #include "../utils.h"
 
 #include <assert.h>
@@ -28,7 +27,8 @@ void gpsInit(void) {
     uartInit(GPS_UART);
     uartSetBaudRate(GPS_UART, 9600);
 
-    const char *baudrateCommand = "$PMTK251,115200*1F\r\n";
+    const char *baudrateCommand = "$PMTK251,38400*27\r\n";
+    //const char *baudrateCommand = "$PMTK251,115200*1F\r\n";
     uartPutStr(GPS_UART, (char *) baudrateCommand);
 
     //Delay to let it settele everything
@@ -37,7 +37,7 @@ void gpsInit(void) {
     //Switch to the higher baudrate and send the sentence configuration after the uart is ready
     while (!uartReadyTx[GPS_UART]) { ;
     }
-    uartSetBaudRate(GPS_UART, 115200);
+    uartSetBaudRate(GPS_UART, 38400);
 
     const char *sentenceCommand = "$PMTK314,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n";
     uartPutStr(GPS_UART, (char *) sentenceCommand);
