@@ -31,9 +31,9 @@ set(AVR_UPLOADTOOL_PORT /dev/spidev0.1)
 # AVR and fuses needs to be set
 set(AVR_MCU atmega2560)
 
-set(AVR_E_FUSE 0xfd)
+set(AVR_E_FUSE 0xdf)
 set(AVR_H_FUSE 0xd8)
-set(AVR_L_FUSE 0xff)
+set(AVR_L_FUSE 0xfc)
 
 ### END TOOLCHAIN SETUP AREA #############################################
 
