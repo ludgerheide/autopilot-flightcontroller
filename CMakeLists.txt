@@ -137,6 +137,8 @@ add_definitions("-ffunction-sections")
 add_definitions("-fdata-sections")
 add_definitions("-c")
 add_definitions("-std=gnu11")
+add_definitions("-DPB_NO_ERRMSG")
+add_definitions("-DPB_BUFFER_ONLY")
 
 #Setup nanopb directory and includes
 set(NANOPB_RELEASE_DIRECOTRY /home/ludger/Developer/nanopb)
