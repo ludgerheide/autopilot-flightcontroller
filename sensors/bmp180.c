@@ -10,7 +10,6 @@
 #include "../avrlib/i2c.h"
 
 #include <assert.h>
-#include <avr/io.h>
 #include <math.h>
 #include "../avrlib/timer.h"
 
@@ -47,6 +46,10 @@ bmp180State myBmp180State;
 volatile tempPressRawData myBmp180RawData;
 static const BMP180_mode_t selectedMode = BMP180_MODE_ULTRAHIGHRES;
 u32 bmp180LastStateChange;
+
+//Filter coefficients
+static u32 sumPressure;
+static const u08 alpha = 2; //Increase to make filter answer slower, decrease to make it faster
 
 //static void bmpWrite8(u08 reg, u08 value) {
 //    //Combine reg and value in a 16 byt variable
@@ -230,7 +233,13 @@ void bmp180GetData(pressureEvent *myEvent) {
     x2 = (-7357 * p) >> 16;
     compp = p + ((x1 + x2 + 3791) >> 4);
 
-    myEvent->pressure = compp * 256; //Multiply by 256 to get 256*Pa
+    //Variable renaming to make the filter more consistent with its usage in other places
+    u32 newPressure = compp;
+    u32 curPressure = myEvent->pressure / 256;
+
+    sumPressure = sumPressure - curPressure + newPressure;
+    myEvent->pressure = (sumPressure + (1 << (alpha - 1))) >> (alpha);
+    myEvent->pressure *= 256; //Multiply by 256 to get 256*Pa
 
     //Temperature output (?)
     int32_t UT, B5;     // following ds convention
@@ -270,7 +279,6 @@ void updateAltitudeData(pressureEvent *staticPressure, altitudeData *myAltitudeD
 
     float dt_in_seconds = (staticPressure->timestamp - myAltitudeData->timestamp) / 1000000.0;
 
-    //TODO: Lo
     s32 current_rate_of_climb = (newAltitude - oldAltitude) / dt_in_seconds;
 
     myAltitudeData->timestamp = staticPressure->timestamp;

@@ -22,6 +22,11 @@
 //Stores the pressure difference (static - pitot) for zero airspeed
 static s32 pitotPressureDifference;
 
+//Filter coefficients
+static u32 sumPressure;
+static const u08 alpha = 2; //Increase to make filter answer slower, decrease to make it faster
+
+
 static u08 bmp280Read8(u08 reg, bmp280_configuration *configuration) {
     assert(configuration->address == BMP280_ADDRESS1 || configuration->address == BMP280_ADDRESS2);
     u08 i2cstat = i2cMasterSendNI(configuration->address, 1, &reg);
@@ -223,7 +228,13 @@ void bmp280GetData(pressureEvent *myEvent, bmp280_configuration *configuration) 
     CRITICAL_SECTION_END;
 
     myEvent->temperature = bmp280_compensate_T_int32(adc_T_temp, configuration);
-    myEvent->pressure = bmp280_compensate_P_int64(adc_P_temp, configuration);
+
+    //Get the "raw" new pressure
+    u32 newPressure = bmp280_compensate_P_int64(adc_P_temp, configuration);
+    u32 curPressure = myEvent->pressure;  //Current filter output
+
+    sumPressure = sumPressure - curPressure + newPressure;
+    myEvent->pressure = (sumPressure + (1 << (alpha - 1))) >> (alpha);
 }
 
 // Measures the pressure compensation
