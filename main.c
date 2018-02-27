@@ -15,6 +15,7 @@
 #include "avrlib/servo.h"
 
 #include "sensors/i2cperipherals.h"
+#include "control/flightController.h"
 
 int main(void) __attribute__ ((noreturn));
 
@@ -30,17 +31,18 @@ static void initIO(void) {
     gpsInit();
     commsInit();
     batteryInit();
+    flightControllerInit();
     wdt_disable();
     wdt_enable(WDTO_DEFAULT);
 }
 
-//Status variables for the sensors
+//Sensor update rates
 const u32 periodGyro = 1000000 / 190; //Microseconds
 const u32 periodAccel = 1000000 / 200;
 const u32 periodMag = 1000000 / 220;
 const u32 periodStatic = 1000 * (BMP180_TEMPERATURE_DURATION + BMP180_PRESSURE_DURATION);
-const u32 periodPitot = (u32) 1000 * 39;
-
+const u32 periodPitot = (u32) 1000 *
+                        39; //Constant value because we can't use the value from the config definition because it isn't const itself.
 
 static void updateSensors(void) {
     u32 now = micros();
@@ -116,6 +118,7 @@ int main(void) {
     initIO();
 
     while (1) {
+        //Get current sensor data
         updateSensors();
 
         //Check if we have a new raspi and xbee available
@@ -125,6 +128,9 @@ int main(void) {
         if (raspiNewMessageReady) {
             raspiHandleMessage();
         }
+
+        //Update the flight controllers
+        updateFlightControls();
 
         switch (nextTask) {
             case 1:
@@ -148,8 +154,6 @@ int main(void) {
             default:
                 break;
         }
-
-        //Check the I2C sensor status, reset the i2c bus if stuff looks strange
 
 
         //Finally, reset the watchdog
