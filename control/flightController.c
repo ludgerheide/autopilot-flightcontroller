@@ -25,13 +25,14 @@ static void updateVNAV(void);
 
 static void updateThrust(void);
 
-static pidData rateOfClimbPid, pitchPid, yawPid;
+static pidData yawPid, rateOfClimbPid, pitchPid, speedPid;
 
 //Constants
 static const float maximumRateOfTurn = (M_PI / 6.0); //Rate of turn corresponding to maximum goal (in rad/s)
 static const s16 maximumAltitudeError = 10000; //Altitude error in centimeters for which we command max climb (in cm)
 static const s16 maximumRateOfClimb = 200; //Maximum commanded rate of limb (in cm/s)
-static const s16 maximumPitch = 64 * 20;
+static const s16 maximumPitch = 64 * 20; //The up/down pitch a "100%" command corresponds to (64*degrees)
+static const u32 maximumSpeedError = 10 * 27.7778; //The maximum speed error (in cm/s)
 static const u32 maximumCommandSetAge = 1000000 / 2; //0.5 seconds
 
 void checkSensors(void) {
@@ -44,6 +45,8 @@ void flightControllerInit(void) {
 
     init_pid(&rateOfClimbPid, 1.0 / maximumRateOfClimb, 1.0 / maximumRateOfClimb, 0, maximumRateOfClimb);
     init_pid(&pitchPid, 1.0 / maximumPitch, 1.0 / maximumPitch, 1.0 / maximumPitch, maximumPitch);
+
+    init_pid(&speedPid, 1.0 / maximumSpeedError, 1.0 / maximumSpeedError, 0, maximumSpeedError);
 
     outputCommandSet.yaw = UINT8_MAX / 2;
     outputCommandSet.pitch = UINT8_MAX / 2;
@@ -150,6 +153,7 @@ static void updateVNAV(void) {
                 targetRateOfClimb = maps32(altitudeError, -maximumAltitudeError, maximumAltitudeError,
                                            -maximumRateOfClimb, maximumRateOfClimb);
             } else {
+                currentFlightMode = DroneMessage_FlightMode_m_degraded;
                 pitchInUse = true;
                 targetPitch = 0;
             }
@@ -165,6 +169,7 @@ static void updateVNAV(void) {
                     targetRateOfClimb = -maximumRateOfClimb;
                 }
             } else {
+                currentFlightMode = DroneMessage_FlightMode_m_degraded;
                 pitchInUse = true;
                 targetPitch = 0;
             }
@@ -187,11 +192,44 @@ static void updateVNAV(void) {
         targetPitch = mapfloat(targetPitchNormalized, -1, 1, -maximumPitch, maximumPitch);
     }
 
-    //Now, go from target pitch to control surface
-    float elevatorValue = pidUpdate(&pitchPid, targetPitch, currentAttitude.pitch, now);
-    outputCommandSet.pitch = mapfloat(elevatorValue, -1, 1, 0, UINT8_MAX);
+    //To calculate pitch, we need a working gyro and accelerometer so attitude can be calculated
+    if (theFlags.gyroEnabled && theFlags.accelEnabled) {
+        //Now, go from target pitch to control surface
+        float elevatorValue = pidUpdate(&pitchPid, targetPitch, currentAttitude.pitch, now);
+        outputCommandSet.pitch = mapfloat(elevatorValue, -1, 1, 0, UINT8_MAX);
+    } else {
+        //Set the elevator to zero and hope for the best
+        currentFlightMode = DroneMessage_FlightMode_m_degraded;
+        outputCommandSet.pitch = UINT8_MAX / 2;
+    }
 }
 
 static void updateThrust(void) {
-    outputCommandSet.thrust = 0;
+    u08 throttle;
+    switch (commandUpdate.which_SpeedCommand) {
+        case DroneMessage_CommandUpdate_speed_tag:
+            //We need working airspeed to maintain target speed
+            if (theFlags.bmp280Enabled) { //BMP280 is the pitot pressure
+                u32 targetSpeed = commandUpdate.SpeedCommand.speed; //cm/s
+                u32 currentSpeed = myAirspeed.speed; //cm/s
+
+                u32 now = micros();
+                float throttleValue = pidUpdate(&speedPid, targetSpeed, currentSpeed, now);
+                throttle = mapfloat(throttleValue, -1, 1, 0, UINT8_MAX);
+            } else {
+                currentFlightMode = DroneMessage_FlightMode_m_degraded;
+                throttle = 0;
+            }
+            break;
+
+        case DroneMessage_CommandUpdate_throttle_tag:
+            throttle = commandUpdate.SpeedCommand.throttle;
+            break;
+
+        default:
+            throttle = 0;
+            break;
+    }
+
+    outputCommandSet.thrust = throttle;
 }
