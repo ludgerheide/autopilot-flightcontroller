@@ -177,29 +177,29 @@ static u08 createProtobuf(messagePurpose thePurpose, u16 *messageLength) {
     }
 
     //Barodata (static) just for logging
-    if (thePurpose == logging && bmp180staticPressure.timestamp - logStaticPressureTime) {
+    if (thePurpose == logging && staticPressure.timestamp - logStaticPressureTime) {
         outgoingMsg.has_static_pressure = true;
 
-        outgoingMsg.static_pressure.timestamp = bmp180staticPressure.timestamp;
-        outgoingMsg.static_pressure.pressure = bmp180staticPressure.pressure;
-        outgoingMsg.static_pressure.temperature = bmp180staticPressure.temperature;
+        outgoingMsg.static_pressure.timestamp = staticPressure.timestamp;
+        outgoingMsg.static_pressure.pressure = staticPressure.pressure;
+        outgoingMsg.static_pressure.temperature = staticPressure.temperature;
 
         //Now update the time
-        logStaticPressureTime = bmp180staticPressure.timestamp;
+        logStaticPressureTime = staticPressure.timestamp;
     }
 
     //Barodata (pitot) just for logging
-    if (thePurpose == logging && bmp280pitotPressure.timestamp - logPitotPressureTime) {
+    if (thePurpose == logging && pitotPressure.timestamp - logPitotPressureTime) {
         outgoingMsg.has_pitot_pressure = true;
 
-        outgoingMsg.pitot_pressure.timestamp = bmp280pitotPressure.timestamp;
-        outgoingMsg.pitot_pressure.pressure = bmp280pitotPressure.pressure;
-        outgoingMsg.pitot_pressure.temperature = bmp280pitotPressure.temperature;
+        outgoingMsg.pitot_pressure.timestamp = pitotPressure.timestamp;
+        outgoingMsg.pitot_pressure.pressure = pitotPressure.pressure;
+        outgoingMsg.pitot_pressure.temperature = pitotPressure.temperature;
 
         //Now update the time
-        logPitotPressureTime = bmp280pitotPressure.timestamp;
+        logPitotPressureTime = pitotPressure.timestamp;
     }
-
+    /*
     //Gyrodata just for logging
     if (thePurpose == logging && curGyro.timestamp - logRawGyroTime) {
         outgoingMsg.has_gyro_raw = true;
@@ -238,7 +238,7 @@ static u08 createProtobuf(messagePurpose thePurpose, u16 *messageLength) {
         //Time update
         logRawAccelTime = curAccel.timestamp;
     }
-
+    */
 
     //Battery for both, as way above
     if ((thePurpose == logging && curBattery.timestamp - logBatteryTime) ||

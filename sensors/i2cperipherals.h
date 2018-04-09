@@ -13,23 +13,15 @@
 
 //This bit field defines which sensor has events queued
 typedef struct {
-    BOOL gyroEnabled;
-    BOOL accelEnabled;
-    BOOL magEnabled;
-    BOOL bmp180Enabled;
-    BOOL bmp280Enabled;
-
-    BOOL gyroReady;
-    BOOL accelReady;
-    BOOL magReady;
-    BOOL bmp180Ready;
-    BOOL bmp280Ready;
+    BOOL imuEnabled;
+    BOOL bmp280_0x76_enabled;
+    BOOL bmp280_0x77_enabled;
 } imuFlags;
 
 extern volatile imuFlags theFlags;
 
 //Initialize all sensors on the IMU board
-void IMUinit(void);
+void I2CInit(void);
 
 //Gets called when an I2C tarnsmission is over
 void customStopHandler(u08 statusReg, u08 deviceaddress);

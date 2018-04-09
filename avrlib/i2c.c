@@ -22,7 +22,6 @@
 #include "i2c.h"
 
 #ifdef I2C_DEBUG
-#include <stdio.h> // include printf function library
 #endif
 
 // Standard I2C bit rates are:
@@ -65,7 +64,7 @@ void i2cInit(void) {
     defined (__AVR_ATmega1281__) || defined (__AVR_ATmega1284P__) || \
     defined (__AVR_ATmega128RFA1__) || defined(__AVR_ATmega2560__))
 
-    const u16 bitRate = 400;
+    const u16 bitRate = 100;
 
     //Reset the bus by clocking 9 times and manually setting a stop condition in software
     //Before enabling the hardware

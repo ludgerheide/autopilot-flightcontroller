@@ -115,7 +115,7 @@ void batteryInit(void) {
 
     //Set up for a first voltage measurement
     theMode = ADC_VOLTAGE_FIRST;
-    a2dSetReference(ADC_REFERENCE_AVCC);
+    a2dSetReference(ADC_REFERENCE_256V);
     a2dStartConversion(VOLTAGE_CHANNEL);
 
     CRITICAL_SECTION_END;
@@ -132,7 +132,10 @@ static u16 convertVoltage(void) {
     //For 2.56V reference
     //const float conversionFactor = 19.626666666 / 1023;
     //For 5V reference
-    const float conversionFactor = 1000 * (38.33333333 / (1023));
+    //const float conversionFactor = 1000 * (38.33333333 / (1023));
+
+    //For just giving out the voltage at the pin instead of the resistor-divider result for battery voltage
+    const float conversionFactor = 1000.0 * (2.56 / 1024);
 
     return voltage * conversionFactor;
 }
@@ -143,9 +146,12 @@ static u16 convertCurrent(void) {
     float current = batteryCurrent;
     CRITICAL_SECTION_END;
     //Subtract to get to the ± 511.5 range
-    current -= 511.5;
+    //current -= 511.5;
 
-    const float conversionFactor = 1000 * (50.0 / (1023));
+    //const float conversionFactor = 1000 * (50.0 / (1023));
+
+    //For just giving out the voltage at the pin instead of the resistor-divider result for battery voltage
+    const float conversionFactor = 1000.0 * (2.56 / 1024);
 
     return current * conversionFactor;
 }

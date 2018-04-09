@@ -24,7 +24,7 @@ cmake_minimum_required(VERSION 2.8)
 # tools to be used for programming the AVR
 ##################################################################################
 set(SSH_COMMAND ssh)
-set(SSH_HOST 192.168.15.14)
+set(SSH_HOST 192.168.15.16)
 set(AVR_UPLOADTOOL avrdude)
 set(AVR_PROGRAMMER linuxspi)
 set(AVR_UPLOADTOOL_PORT /dev/spidev0.1)
@@ -78,6 +78,8 @@ else (DEFINED ENV{AVR_FIND_ROOT_PATH})
         set(CMAKE_FIND_ROOT_PATH "/usr/avr")
     elseif (EXISTS "/usr/lib/avr")
         set(CMAKE_FIND_ROOT_PATH "/usr/lib/avr")
+    elseif (EXISTS "/Users/ludger/Developer/avr8-gnu-toolchain-darwin_x86_64")
+        set(CMAKE_FIND_ROOT_PATH "/Users/ludger/Developer/avr8-gnu-toolchain-darwin_x86_64")
     elseif (EXISTS "/usr/local/CrossPack-AVR")
         set(CMAKE_FIND_ROOT_PATH "/usr/local/CrossPack-AVR")
     else (EXISTS "/opt/local/avr")
@@ -139,27 +141,29 @@ add_definitions("-c")
 add_definitions("-std=gnu11")
 
 #Setup nanopb directory and includes
-set(NANOPB_RELEASE_DIRECOTRY /home/ludger/Developer/nanopb)
+set(NANOPB_RELEASE_DIRECOTRY /Users/ludger/Developer/nanopb-0.3.8-macosx-x86)
 include_directories(${NANOPB_RELEASE_DIRECOTRY})
 
 ##################################################################################
 # Debug and printf options
 ##################################################################################
-add_definitions("-DNDEBUG")
-#add_definitions("-D__ASSERT_USE_STDERR")
-#add_definitions("-DI2C_DEBUG")
+#add_definitions("-DNDEBUG")
+add_definitions("-D__ASSERT_USE_STDERR")
+add_definitions("-DI2C_DEBUG")
 #add_definitions("-DIMU_DEBUG")
 #add_definitions("-DBMP280_DEBUG")
 #add_definitions("-DGPS_DEBUG")
 #add_definitions("-DCOMMS_DEBUG")
 #add_definitions("-DFLIGHT_CONTROLLER_DEBUG")
+add_definitions("-DBNO055_DEBUG")
+add_definitions("-DPB_NO_ERRMSG -DPB_BUFFER_ONLY")
 
 ##################################################################################
 # add AVR executable
 ##################################################################################
 add_custom_target(
         createProtobuf
-        COMMAND protoc --plugin=protoc-gen-nanopb=${NANOPB_RELEASE_DIRECOTRY}/generator/protoc-gen-nanopb ${CMAKE_CURRENT_SOURCE_DIR}/../communicationProtocol.proto --nanopb_out=${CMAKE_CURRENT_SOURCE_DIR}/protobuf -I ${CMAKE_CURRENT_SOURCE_DIR}/../
+        COMMAND protoc --plugin=protoc-gen-nanopb=${NANOPB_RELEASE_DIRECOTRY}/generator-bin/protoc-gen-nanopb ${CMAKE_CURRENT_SOURCE_DIR}/../communicationProtocol.proto --nanopb_out=${CMAKE_CURRENT_SOURCE_DIR}/protobuf -I ${CMAKE_CURRENT_SOURCE_DIR}/../
 )
 
 file(GLOB autopilot_SRC
@@ -177,5 +181,5 @@ add_dependencies(autopilot createProtobuf)
 
 #---------------- Library Options ----------------
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-u,vfprintf")
-target_link_libraries(autopilot-${AVR_MCU}.elf printf_min)
-#target_link_libraries(autopilot-${AVR_MCU}.elf printf_flt m)
+#target_link_libraries(autopilot-${AVR_MCU}.elf printf_min)
+target_link_libraries(autopilot-${AVR_MCU}.elf printf_flt m)

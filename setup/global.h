@@ -27,8 +27,6 @@
 #include "../avrlib/avrlibtypes.h"
 
 #include "../sensors/bmp180.h"
-#include "../sensors/gyro.h"
-#include "../sensors/accelMag.h"
 #include "../sensors/battery.h"
 #include "../sensors/bmp280.h"
 
@@ -50,17 +48,25 @@
 typedef struct {
     u64 timestamp;
 
-    u16 courseMagnetic;
+    u16 courseMagnetic; //64*degrees
     s16 pitch;
     s16 roll;
 } attitude_struct;
 attitude_struct currentAttitude;
 
-pressureEvent bmp180staticPressure, bmp280pitotPressure;
+typedef struct {
+    u64 timestamp;
+
+    s16 x;
+    s16 y;
+    s16 z;
+} xyz;
+
+attitude_struct currentAttitude;
+xyz gravity, linearAcceleration, angularVelocity;
+
+pressureEvent staticPressure, pitotPressure;
 altitudeData myAltitudeData;
 airspeed_struct myAirspeed;
-magEvent uncompensatedMag, curMag;
-accelEvent curAccel;
-gyroEvent curGyro;
 batteryEvent curBattery;
 #endif
